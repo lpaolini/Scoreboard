@@ -47,7 +47,6 @@ bool Timer::isRestarted() {
         return true;
     }
     return false;
-    // return restarted;
 }
 
 unsigned long Timer::elapsed() {

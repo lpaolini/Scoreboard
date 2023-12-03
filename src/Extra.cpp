@@ -5,19 +5,22 @@ Extra::Extra(
     uint8_t displayIndex,
     uint8_t brightness,
     bool invert,
-    void (*onUpdateFouls)(uint8_t fouls),
-    void (*onUpdateTimeouts)(uint8_t timeouts)
+    Beeper *beeper
 ) {
     this->display = display;
     this->displayIndex = displayIndex;
     this->brightness = brightness;
     this->invert = invert;
-    this->onUpdateFouls = onUpdateFouls;
-    this->onUpdateTimeouts = onUpdateTimeouts;
+    this->beeper = beeper;
 }
 
-void Extra::setup() {
-    display->shutdown(displayIndex, false);
+void Extra::setup(
+    void (*onUpdateFouls)(uint8_t fouls), 
+    void (*onUpdateTimeouts)(uint8_t timeouts)
+) {
+    this->onUpdateFouls = onUpdateFouls;
+    this->onUpdateTimeouts = onUpdateTimeouts;
+    display->shutdown(displayIndex, true);
     display->clearDisplay(displayIndex);
     display->setIntensity(displayIndex, brightness);
     reset();
@@ -30,24 +33,34 @@ void Extra::reset() {
     resetTimeouts();
 }
 
-void Extra::resetPeriod() {
+void Extra::setPeriod(uint8_t period) {
     updating = false;
     inputTimer.stop();
     resetFouls();
+    if (period == 1 || period == 3 || period == 5 || period == 6) {
+        resetTimeouts();
+    }
+    maxTimeouts = getMaxTimeouts(period);
+    updateFoulsDisplay();
+    updateTimeoutsDisplay();
+    enable();
 }
 
-void Extra::resetFouls() {
-    fouls = 0;
-    prevFouls = 0;
-    foulsFlashTimer.stop();
-    updateFouls();
+uint8_t Extra::getMaxTimeouts(uint8_t period) {
+    if (period == 1 || period == 2) return 2;
+    if (period == 3 || period == 4) return 3;
+    if (period == 5) return 1;
+    return 0;
 }
 
-void Extra::resetTimeouts() {
-    timeouts = 0;
-    prevTimeouts = 0;
-    timeoutsFlashTimer.stop();
-    updateTimeouts();
+void Extra::enable() {
+    display->shutdown(displayIndex, false);
+    enabled = true;
+}
+
+void Extra::disable() {
+    display->shutdown(displayIndex, true);
+    enabled = false;
 }
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {
@@ -57,11 +70,11 @@ void Extra::printTimeoutChar(uint8_t pos, bool show) {
         display->setLed(displayIndex, pos, 5, true);
         display->setLed(displayIndex, pos, 7, true);
     } else {
-        display->setChar(displayIndex, pos, ' ', false);
+        display->setChar(displayIndex, pos, '_', false);
     }
 }
 
-void Extra::updateFouls(bool show) {
+void Extra::updateFoulsDisplay(bool show) {
     if (show) {
         display->setChar(displayIndex, FOULS_POS[invert][2], 'F', false);
         uint8_t tenths = decimalDigit(fouls, 1);
@@ -78,49 +91,82 @@ void Extra::updateFouls(bool show) {
     }
 }
 
-void Extra::updateTimeouts(bool show) {
-    if (show) {
+void Extra::updateTimeoutsDisplay(bool show) {
+    if (show && maxTimeouts > 2) {
         printTimeoutChar(TIMEOUTS_POS[invert][2], timeouts > 2);
-        printTimeoutChar(TIMEOUTS_POS[invert][1], timeouts > 1);
-        printTimeoutChar(TIMEOUTS_POS[invert][0], timeouts > 0);
     } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][2], ' ', false);
+    }
+    if (show && maxTimeouts > 1) {
+        printTimeoutChar(TIMEOUTS_POS[invert][1], timeouts > 1);
+    } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][1], ' ', false);
+    }
+    if (show && maxTimeouts > 0) {
+        printTimeoutChar(TIMEOUTS_POS[invert][0], timeouts > 0);
+    } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][0], ' ', false);
     }
 }
 
-void Extra::update() {
-    updateFouls();
-    updateTimeouts();
+void Extra::resetFouls() {
+    updateFouls(0, true);
 }
 
 void Extra::increaseFouls() {
-    fouls = min(fouls + 1, MAX_FOULS);
-    inputTimer.reset();
-    updating = true;
-    update();
+    if (fouls < MAX_FOULS) {
+        updateFouls(fouls + 1);
+    } else {
+        beeper->notAllowed();
+    }
 }
 
 void Extra::decreaseFouls() {
-    fouls = max(fouls - 1, 0);
-    inputTimer.reset();
-    updating = true;
-    update();
+    if (fouls > 0) {
+        updateFouls(max(fouls - 1, 0));
+    } else {
+        beeper->notAllowed();
+    }
+}
+
+void Extra::updateFouls(uint8_t fouls, bool force) {
+    if (enabled || force) {
+        this-> fouls = fouls;
+        inputTimer.reset();
+        foulsConfirmationTimer.stop();
+        updating = true;
+        updateFoulsDisplay();
+    }
+}
+
+void Extra::resetTimeouts() {
+    updateTimeouts(0, true);
 }
 
 void Extra::increaseTimeouts() {
-    timeouts = min(timeouts + 1, MAX_TIMEOUTS);
-    inputTimer.reset();
-    updating = true;
-    update();
+    if (timeouts < MAX_TIMEOUTS) {
+        updateTimeouts(min(timeouts + 1, maxTimeouts));
+    } else {
+        beeper->notAllowed();
+    }
 }
 
 void Extra::decreaseTimeouts() {
-    timeouts = max(timeouts - 1, 0);
-    inputTimer.reset();
-    updating = true;
-    update();
+    if (timeouts > 0) {
+        updateTimeouts(timeouts - 1);
+    } else {
+        beeper->notAllowed();
+    }
+}
+
+void Extra::updateTimeouts(uint8_t timeouts, bool force) {
+    if (enabled || force) {
+        this->timeouts = timeouts;
+        inputTimer.reset();
+        timeoutsConfirmationTimer.stop();
+        updating = true;
+        updateTimeoutsDisplay();
+    }
 }
 
 int Extra::decimalDigit(int value, int digit) {
@@ -132,47 +178,55 @@ int Extra::decimalDigit(int value, int digit) {
     }
 }
 
+void Extra::lastTwoMinutes() {
+    if (timeouts == 0) {
+        increaseTimeouts();
+    }
+}
+
 void Extra::loopInput() {
     inputTimer.loop();
     if (updating) {
         if (inputTimer.isTriggered()) {
             if (fouls != prevFouls) {
-                updateFouls();
-                onUpdateFouls(fouls);
+                updateFoulsDisplay();
+                if (onUpdateFouls != nullptr) {
+                    onUpdateFouls(fouls);
+                }
+                foulsConfirmationTimer.reset();
                 prevFouls = fouls;
-                foulsFlashTimer.reset();
+                beeper->confirm();
             }
             if (timeouts != prevTimeouts) {
-                updateTimeouts();
-                onUpdateTimeouts(timeouts);
+                updateTimeoutsDisplay();
+                if (onUpdateTimeouts != nullptr) {
+                    onUpdateTimeouts(timeouts);
+                }
                 prevTimeouts = timeouts;
-                timeoutsFlashTimer.reset();
+                timeoutsConfirmationTimer.reset();
+                beeper->confirm();
             }
             updating = false;
         }
     }
 }
 
-void Extra::loopFoulsFlash() {
-    foulsFlashTimer.loop();
-    if (foulsFlashTimer.isRunning()) {
-        updateFouls(foulsFlashTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2 == 0);
-    } else {
-        updateFouls();
+void Extra::loopFoulsConfirmation() {
+    foulsConfirmationTimer.loop();
+    if (foulsConfirmationTimer.isRunning()) {
+        updateFoulsDisplay(foulsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2);
     }
 }
 
-void Extra::loopTimeoutsFlash() {
-    timeoutsFlashTimer.loop();
-    if (timeoutsFlashTimer.isRunning()) {
-        updateTimeouts(timeoutsFlashTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2 == 0);
-    } else {
-        updateTimeouts();
+void Extra::loopTimeoutsConfirmation() {
+    timeoutsConfirmationTimer.loop();
+    if (timeoutsConfirmationTimer.isRunning()) {
+        updateTimeoutsDisplay(timeoutsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2);
     }
 }
 
 void Extra::loop() {
     loopInput();
-    loopFoulsFlash();
-    loopTimeoutsFlash();
+    loopFoulsConfirmation();
+    loopTimeoutsConfirmation();
 }

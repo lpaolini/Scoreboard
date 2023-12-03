@@ -5,13 +5,17 @@ PressHoldButtonPair::PressHoldButtonPair(
     uint8_t pin2,
     uint16_t pressHoldDelay,
     uint16_t pressHoldRepeatDelay,
-    uint16_t pressHoldRepeatInterval
+    uint16_t pressHoldRepeatMaxInterval,
+    uint16_t pressHoldRepeatMinInterval
 ) {
     this->pin1 = pin1;
     this->pin2 = pin2;
     this->pressHoldDelay = pressHoldDelay;
     this->pressHoldRepeatDelay = pressHoldRepeatDelay;
-    this->pressHoldRepeatInterval = pressHoldRepeatInterval;
+    this->pressHoldRepeatMaxInterval = pressHoldRepeatMaxInterval;
+    this->pressHoldRepeatMinInterval = pressHoldRepeatMinInterval;
+
+    this->pressHoldRepeatInterval = pressHoldRepeatMaxInterval;
 }
 
 PressHoldButtonPair& PressHoldButtonPair::setup() {
@@ -111,6 +115,7 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
                     repeatDisabled1 = true;
                 }
                 if (!repeatDisabled1 && onPressHoldRepeat1 != nullptr) {
+                    decreaseRepeatInterval();
                     onPressHoldRepeat1();
                 }
             } else if (pin == pin2) {
@@ -119,6 +124,7 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
                     repeatDisabled2 = true;
                 }
                 if (!repeatDisabled2 && onPressHoldRepeat2 != nullptr) {
+                    decreaseRepeatInterval();
                     onPressHoldRepeat2();
                 }
             }
@@ -130,12 +136,14 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
                 repeatPressed1 = false;
                 repeatDisabled1 = false;
                 longPressedBoth = false;
+                resetRepeatInterval();
             } else if (pin == pin2) {
                 pressed2 = false;
                 longPressed2 = false;
                 repeatPressed2 = false;
                 repeatDisabled2 = false;
                 longPressedBoth = false;
+                resetRepeatInterval();
             }
             break;
         default:
@@ -150,6 +158,18 @@ void PressHoldButtonPair::repeatDisable() {
     if (repeatPressed2) {
         repeatDisabled2 = true;
     }
+}
+
+void PressHoldButtonPair::decreaseRepeatInterval() {
+    if (pressHoldRepeatInterval > pressHoldRepeatMinInterval) {
+        pressHoldRepeatInterval--;
+        config.setRepeatPressInterval(pressHoldRepeatInterval);
+    }
+}
+
+void PressHoldButtonPair::resetRepeatInterval() {
+    pressHoldRepeatInterval = pressHoldRepeatMaxInterval;
+    config.setRepeatPressInterval(pressHoldRepeatInterval);
 }
 
 void PressHoldButtonPair::loop() {

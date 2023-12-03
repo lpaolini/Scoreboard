@@ -18,6 +18,8 @@ class PressHoldButtonPair : public IEventHandler {
         uint8_t pin2;
         uint16_t pressHoldDelay;
         uint16_t pressHoldRepeatDelay;
+        uint16_t pressHoldRepeatMaxInterval;
+        uint16_t pressHoldRepeatMinInterval;
         uint16_t pressHoldRepeatInterval;
         bool pressed1 = false;
         bool pressed2 = false;
@@ -37,9 +39,18 @@ class PressHoldButtonPair : public IEventHandler {
         void (*onBothPressed)(void) = nullptr;
         void (*onPressHoldBoth)(void) = nullptr;
         void handleEvent(AceButton* button, uint8_t eventType, uint8_t buttonState);
+        void decreaseRepeatInterval();
+        void resetRepeatInterval();
 
     public:
-        PressHoldButtonPair(uint8_t pin1, uint8_t pin2, uint16_t pressHoldDelay = 3000, uint16_t pressHoldRepeatDelay = 0, uint16_t pressHoldRepeatInterval = 0);
+        PressHoldButtonPair(
+            uint8_t pin1, 
+            uint8_t pin2, 
+            uint16_t pressHoldDelay = 3000, 
+            uint16_t pressHoldRepeatDelay = 0, 
+            uint16_t pressHoldRepeatMaxInterval = 0, 
+            uint16_t pressHoldRepeatMinInterval = 0
+        );
         PressHoldButtonPair& setup();
         PressHoldButtonPair& press1(void (*onPress1)(void));
         PressHoldButtonPair& pressHold1(void (*onPressHold1)(void));

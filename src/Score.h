@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 #include <LedControl.h>
-#include "Timer.h"
 #include "constants.h"
+#include "Beeper.h"
+#include "Timer.h"
 
 // Score
 
@@ -19,12 +20,13 @@
 // xxx  -1P     -1P  xxx
 
 
- class Score {
+class Score {
     private:
         // make sure INPUT_TIMER_MS is not less than 2 * FLASH_TIMER_MS * FLASH_COUNT
-        const unsigned long INPUT_TIMER_MS = 1000;
-        const unsigned long CONFIRMATION_FLASH_COUNT = 2;
-        const unsigned long COMFIRMATION_FLASH_DURATION_MS = 100;
+        const unsigned long INPUT_TIMER_MS = 500;
+        const unsigned long CONFIRMATION_FLASH_COUNT = 6;
+        const unsigned long CONFIRMATION_FLASH_DURATION_MS = 75;
+        const bool THREE_DIGIT_SCORE = false;
         const uint8_t SCORE_POS[2][3] = {{ 5, 6, 7 }, { 0, 1, 2 }};
         const uint8_t DELTA_POS[2][3] = {{ 0, 1, 2 }, { 5, 6, 7 }};
 
@@ -32,17 +34,19 @@
         uint8_t displayIndex;
         uint8_t brightness;
         bool invert;
-        void (*onUpdate)(uint8_t score);
+        Beeper *beeper;
+
+        void (*onUpdate)(uint8_t score) {};
+
+        bool enabled;
 
         uint8_t score;
         int8_t delta;
         int8_t prevDelta;
         bool updating;
         Timer inputTimer = Timer(INPUT_TIMER_MS, false);
-        Timer flashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * COMFIRMATION_FLASH_DURATION_MS, false);
+        Timer flashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
         int decimalDigit(int value, int digit);
-        void increaseDelta(bool roll = false);
-        // void decreaseDelta(bool roll = false);
         uint8_t limitScore(int16_t score);
         void updateScore(bool show = true);
         void updateDelta(int8_t delta, bool showIndicator = true);
@@ -55,12 +59,16 @@
             uint8_t displayIndex,
             uint8_t brightness,
             bool invert,
-            void (*onUpdate)(uint8_t score)
+            Beeper *beeper
         );
-        void setup();
+        void setup(void (*onUpdate)(uint8_t score));
         void reset();
+        void enable();
+        void disable();
+        void setPeriod(uint8_t period);
         void startTimer();
-        void nextDelta();
+        void increaseDelta(bool roll = true);
+        void decreaseDelta(bool roll = true);
         void clearDelta();
         void increaseScore();
         void decreaseScore();

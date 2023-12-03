@@ -4,30 +4,54 @@ GameTime::GameTime(
     Adafruit_7segment *display,
     uint8_t address,
     uint8_t brightness,
-    void (*onUpdate)(unsigned long time)
+    Beeper *beeper
 ) {
     this->display = display;
     this->address = address;
     this->brightness = brightness;
-    this->onUpdate = onUpdate;
+    this->beeper = beeper;
 }
 
-void GameTime::setup() {
+void GameTime::setup(
+    void (*onUpdate)(unsigned long remaining),
+    void (*onGameMode)(bool gameMode),
+    void (*onResetPeriod)(uint8_t period),
+    void (*onLastTwoMinutes)()
+) {
+    this->onUpdate = onUpdate;
+    this->onGameMode = onGameMode;
+    this->onResetPeriod = onResetPeriod;
+    this->onLastTwoMinutes = onLastTwoMinutes;
     display->begin(address);
-    display->setBrightness(brightness);
+    setBrightness(brightness);
     reset();
 }
 
-void GameTime::reset() {
-    if (!isRunning()) {
-        currentPreset = defaultPreset;
-        resetPeriod();
-    }
+void GameTime::setBrightness(uint8_t brightness) {
+    display->setBrightness(brightness);
 }
 
-void GameTime::resetPeriod() {
-    if (!isRunning()) {
-        mode = SET_TIME;
+uint8_t GameTime::presetCount() {
+    return sizeof(preset)/sizeof(preset[0]);
+}
+
+void GameTime::reset() {
+    mode = SET_STEP;
+    phase = REGULAR_TIME;
+    period = 1;
+    homeScore = 0;
+    guestScore = 0;
+    currentPreset = defaultPreset;
+    resetPeriod();
+}
+
+void GameTime::resetPeriod(bool advancePeriod) {
+    if (phase != END_OF_GAME) {
+        if (advancePeriod) {
+            increaseStep();
+        }
+        onGameMode(false);
+        mode = SET_STEP;
         time = preset[currentPreset];
     }
 }
@@ -49,30 +73,45 @@ int GameTime::decimalDigit(int value, int digit) {
     }
 }
 
-uint8_t GameTime::presetCount() {
-    return sizeof(preset)/sizeof(preset[0]);
+void GameTime::showTime() {
+    display->setDisplayState(true);
+
+    showLastTwoMinutesAlert(time);
+
+    if (time <= 59900) {
+        showSecTenth(time);
+    } else {
+        showMinSec(time);
+    }
+
+    if ((mode == RUN || mode == STOP) && lastTime != time) {
+        if (mode == RUN && phase == REGULAR_TIME && period == 4 && lastTime > 120000 && time <= 120000) {
+            onLastTwoMinutes();
+        }
+        lastTime = time;
+        onUpdate(time);
+    }
 }
 
-void GameTime::showMinSec(unsigned long time, bool showColon) {
-    uint8_t min = time / 60000;
-    uint8_t sec = time % 60000 / 1000;
-    if (min < 10) {
-        display->writeDigitAscii(0, ' ', false);
-    } else {
+void GameTime::showMinSec(unsigned long time) {
+    unsigned long adjustedTime = time + 999; // adjust for truncation to whole seconds
+    uint8_t min = adjustedTime / 60000;
+    uint8_t sec = adjustedTime % 60000 / 1000;
+    if (min >= 10) {
         display->writeDigitNum(0, decimalDigit(min, 1), false);
     }
     display->writeDigitNum(1, decimalDigit(min, 0), false);
     display->writeDigitNum(3, decimalDigit(sec, 1), false);
     display->writeDigitNum(4, decimalDigit(sec, 0), false);
-    display->drawColon(showColon);
+    display->drawColon(mode == RUN ? (time) / 150 % 2 : true);
     display->writeDisplay();
 }
 
 void GameTime::showSecTenth(unsigned long time) {
-    uint8_t sec = time / 1000;
-    uint8_t tenth = time % 1000 / 100;
+    unsigned long adjustedTime = time + 99; // adjust for truncation to tenths of seconds
+    uint8_t sec = adjustedTime / 1000;
+    uint8_t tenth = adjustedTime % 1000 / 100;
 
-    display->writeDigitAscii(0, ' ', false);
     if (sec < 10) {
         display->writeDigitAscii(1, ' ', false);
     } else {
@@ -84,95 +123,282 @@ void GameTime::showSecTenth(unsigned long time) {
     display->writeDisplay();
 }
 
-void GameTime::update() {
-    unsigned long now = millis();
-
-    if (time < 59900) {
-        showSecTenth(time + 99);
+void GameTime::showLastTwoMinutesAlert(unsigned long time) {
+    if (mode == RUN && phase == REGULAR_TIME && period == 4 && time <= 120000 && time / 250 % 2) {
+        display->writeDigitRaw(0, 0b01001001);
     } else {
-        bool showColon = mode == RUN
-            ? (now - timeStop) / 250 % 2
-            : true;
-        showMinSec(time + 999, showColon);
+        display->writeDigitRaw(0, 0b00000000);
+    }
+}
+
+void GameTime::showPeriod() {
+    display->setDisplayState(true);
+
+    switch (phase) {
+        case PREPARATION:
+            display->writeDigitAscii(0, 'P', false);
+            display->writeDigitAscii(1, 'r', false);
+            display->writeDigitAscii(3, 'E', false);
+            display->writeDigitAscii(4, 'P', false);
+            break;
+        case REGULAR_TIME:
+            display->writeDigitAscii(0, ' ', false);
+            display->writeDigitAscii(1, 'P', false);
+            display->writeDigitNum(3, period, false);
+            display->writeDigitAscii(4, ' ', false);
+            break;
+        case INTERVAL:
+            display->writeDigitAscii(0, 'I', false);
+            display->writeDigitAscii(1, 'n', false);
+            display->writeDigitAscii(3, 't', false);
+            display->writeDigitAscii(4, 'r', false);
+            break;
+        case EXTRA_TIME:
+            display->writeDigitAscii(0, 'S', false);
+            display->writeDigitAscii(1, 'u', false);
+            display->writeDigitAscii(3, 'p', false);
+            display->writeDigitAscii(4, 'p', false);
+            break;
+        case END_OF_GAME:
+            display->writeDigitAscii(0, '-', false);
+            display->writeDigitAscii(1, '-', false);
+            display->writeDigitAscii(3, '-', false);
+            display->writeDigitAscii(4, '-', false);
+            break;
+        default:
+            break;
     }
 
-    if (lastTime != time) {
-        lastTime = time;
-        onUpdate(time);
+    display->drawColon(false);
+    display->writeDisplay();
+}
+
+void GameTime::setTime() {
+    if (phase != END_OF_GAME) {
+        mode = SET_TIME;
     }
 }
 
 void GameTime::start() {
-    if (time > 0) {
+    if (time == 0) {
+        resetPeriod(true);
+    } else {
         mode = RUN;
         this->timeStart = millis();
-        update();
+        showTime();
+        setBrightness(START_FLASH_BRIGHTNESS);
+        startFlash.reset();
+        beeper->timeStart();
     }
 }
 
 void GameTime::stop() {
     mode = STOP;
     this->timeStop = millis();
-    update();
+    showTime();
+    beeper->timeStop();
 }
 
-void GameTime::toggle() {
-    if (mode == RUN) {
-        stop();
-    } else {
-        start();
+void GameTime::next() {
+    switch (mode) {
+        case SET_STEP:
+            setTime();
+            break;
+        case SET_TIME:
+            switch (phase) {
+                case PREPARATION:
+                    onResetPeriod(0);
+                    break;
+                case REGULAR_TIME:
+                    onResetPeriod(period);
+                    break;
+                case INTERVAL:
+                    onResetPeriod(6);
+                    break;
+                case EXTRA_TIME:
+                    onResetPeriod(5);
+                    break;
+                default:
+                    break;
+            }
+            stop();
+            break;
+        case RUN:
+            stop();
+            break;
+        case STOP:
+            start();
+            break;
+        default:
+            break;
     }
 }
 
-void GameTime::increaseStop(uint8_t delta) {
-    time = min(MAX_TIME, time + 1000 * delta);
-    hold.reset();
-    update();
+void GameTime::prev() {
+    switch (mode) {
+        case SET_TIME:
+            mode = SET_STEP;
+            break;
+        case RUN:
+            stop();
+            break;
+        case STOP:
+            start();
+            break;
+        default:
+            break;
+    }
 }
 
-void GameTime::increaseSetTime() {
+void GameTime::increaseRemainingTime() {
+    time = min(MAX_TIME, time + 1000);
+    hold.reset();
+    showTime();
+}
+
+void GameTime::increaseStep() {
+    switch (phase) {
+        case PREPARATION:
+            phase = REGULAR_TIME;
+            period = 1;
+            break;
+        case REGULAR_TIME:
+            increasePeriod();
+            break;
+        case INTERVAL:
+            phase = REGULAR_TIME;
+            period = 3;
+            break;
+        case EXTRA_TIME:
+            if (!isParity()) {
+                phase = END_OF_GAME;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void GameTime::increasePeriod() {
+    switch (period) {
+        case 1:
+            period = 2;
+            break;
+        case 2:
+            phase = INTERVAL;
+            break;
+        case 3:
+            period = 4;
+            break;
+        case 4:
+            if (isParity()) {
+                phase = EXTRA_TIME;
+            } else {
+                phase = END_OF_GAME;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void GameTime::increaseTime() {
     currentPreset = min(currentPreset + 1, presetCount() - 1);
     time = preset[currentPreset];
 }
 
-void GameTime::increase(uint8_t delta) {
+void GameTime::increase() {
     switch (mode) {
-        case STOP: increaseStop(delta); break;
-        case SET_TIME: increaseSetTime(); break;
+        case STOP: increaseRemainingTime(); break;
+        case SET_STEP: increaseStep(); break;
+        case SET_TIME: increaseTime(); break;
         default: break;
     }
 }
 
-void GameTime::decreaseSetTime() {
+void GameTime::decreaseStep() {
+    switch (phase) {
+        case END_OF_GAME:
+            if (isParity()) {
+                phase = EXTRA_TIME;
+            } else {
+                phase = REGULAR_TIME;
+                period = 4;
+            }
+            break;
+        case EXTRA_TIME:
+            phase = REGULAR_TIME;
+            period = 4;
+            break;
+        case INTERVAL:
+            phase = REGULAR_TIME;
+            period = 2;
+            break;
+        case REGULAR_TIME:
+            decreasePeriod();
+            break;
+        default:
+            break;
+    }
+}
+
+void GameTime::decreasePeriod() {
+    switch (period) {
+        case 1:
+            phase = PREPARATION;
+            break;
+        case 2:
+            period = 1;
+            break;
+        case 3:
+            phase = INTERVAL;
+            break;
+        case 4:
+            period = 3;
+            break;
+        default:
+            break;
+    }
+}
+
+void GameTime::decreaseTime() {
     currentPreset = max(currentPreset - 1, 0);
     time = preset[currentPreset];
 }
 
-void GameTime::decreaseStop(uint8_t delta) {
+void GameTime::decreaseRemainingTime() {
     if (time > 0) {
-        time = max(0L, time - 1000 * delta);
+        time = max(1000L, time - min(1000, time));
         hold.reset();
-        update();
+        showTime();
     }
 }
 
-void GameTime::decrease(uint8_t delta) {
+void GameTime::decrease() {
     switch (mode) {
-        case STOP: decreaseStop(delta); break;
-        case SET_TIME: decreaseSetTime(); break;
+        case STOP: decreaseRemainingTime(); break;
+        case SET_STEP: decreaseStep(); break;
+        case SET_TIME: decreaseTime(); break;
         default: break;
     }
 }
 
+void GameTime::setHomeScore(uint8_t homeScore) {
+    this->homeScore = homeScore; 
+}
+
+void GameTime::setGuestScore(uint8_t guestScore) {
+    this->guestScore = guestScore;
+}
+
 void GameTime::loopStop() {
     unsigned long now = millis();
-    bool show = (hold.isRunning() && !hold.isTriggered()) || (now - timeStop) / 200 % 2;
-    if (show) {
-        update();
-    } else {
-        display->clear();
-        display->writeDisplay();
-    }
+    bool show = (hold.isRunning() && !hold.isTriggered()) || (now - timeStop) / STOP_FLASH_DURATION_MS % 2;
+    display->setDisplayState(show);
+}
+
+bool GameTime::isParity() {
+    return homeScore > 0 && guestScore > 0 && homeScore == guestScore;
 }
 
 void GameTime::loopRun() {
@@ -181,24 +407,30 @@ void GameTime::loopRun() {
     time = time > elapsed ? time - elapsed : 0;
     timeStart = now;
     if (time > 0) {
-        update();
+        showTime();
     } else {
         stop();
     }
 }
 
 void GameTime::loopSetTime() {
-    if (time == 0) {
-        // time = TIME_10_MIN;
-    }
-    update();
+    showTime();
+}
+
+void GameTime::loopSetStep() {
+    showPeriod();
 }
 
 void GameTime::loop() {
     hold.loop();
+    startFlash.loop();
+    if (startFlash.isExpired()) {
+        setBrightness(brightness);
+    }
     switch (mode) {
         case STOP: loopStop(); break;
         case RUN: loopRun(); break;
         case SET_TIME: loopSetTime(); break;
+        case SET_STEP: loopSetStep(); break;
     }
 }

@@ -1,21 +1,26 @@
 #include "Score.h"
 
 Score::Score(
-    LedControl *display, 
+    LedControl *display,
     uint8_t displayIndex,
     uint8_t brightness,
     bool invert,
-    void (*onUpdate)(uint8_t score)
+    Beeper *beeper
 ) {
     this->display = display;
     this->displayIndex = displayIndex;
     this->brightness = brightness;
     this->invert = invert;
-    this->onUpdate = onUpdate;
+    this->beeper = beeper;
 }
 
-void Score::setup() {
-    display->shutdown(displayIndex, false);
+// void Score::setOnUpdate(void (*onUpdate)(uint8_t score)) {
+//     this->onUpdate = onUpdate;
+// }
+
+void Score::setup(void (*onUpdate)(uint8_t score)) {
+    this->onUpdate = onUpdate;
+    display->shutdown(displayIndex, true);
     display->clearDisplay(displayIndex);
     display->setIntensity(displayIndex, brightness);
     reset();
@@ -32,6 +37,20 @@ void Score::reset() {
     updateDelta(delta, false);
 }
 
+void Score::enable() {
+    display->shutdown(displayIndex, false);
+    enabled = true;
+}
+
+void Score::disable() {
+    display->shutdown(displayIndex, true);
+    enabled = false;
+}
+
+void Score::setPeriod(uint8_t period) {
+    enable();
+}
+
 void Score::startTimer() {
     inputTimer.reset();
 }
@@ -39,7 +58,7 @@ void Score::startTimer() {
 void Score::updateScore(bool show) {
     if (show) {
         uint8_t hundreds = decimalDigit(score, 2);
-        if (hundreds) {
+        if (hundreds || THREE_DIGIT_SCORE) {
             display->setDigit(displayIndex, SCORE_POS[invert][2], hundreds, false);
             display->setDigit(displayIndex, SCORE_POS[invert][1], decimalDigit(score, 1), false);
             display->setDigit(displayIndex, SCORE_POS[invert][0], decimalDigit(score, 0), false);
@@ -81,21 +100,21 @@ void Score::clearDelta() {
     display->setChar(displayIndex, DELTA_POS[invert][0], ' ', false);
     display->setChar(displayIndex, DELTA_POS[invert][1], ' ', false);
     display->setChar(displayIndex, DELTA_POS[invert][2], ' ', false);
-    // inputTimer.stop();
-}
-
-void Score::nextDelta() {
-    increaseDelta(true);
 }
 
 void Score::undo() {
-    if (prevDelta != 0) {
-        delta = -prevDelta;
-        prevDelta = delta;
+    if (prevDelta > 0) {
+        if (delta == 0) {
+            delta = -prevDelta;
+        } else {
+            delta = 0;
+        }
+        inputTimer.stop();
+        updating = true;
+        updateDelta(delta);
+    } else {
+        beeper->notAllowed();
     }
-    inputTimer.stop();
-    updating = true;
-    updateDelta(delta);
 }
 
 int Score::decimalDigit(int value, int digit) {
@@ -108,33 +127,45 @@ int Score::decimalDigit(int value, int digit) {
 }
 
 void Score::increaseDelta(bool roll) {
-    delta = roll
-        ? (max(0, delta) + 1) % 4
-        : min(delta + 1, 3);
-    inputTimer.stop();
-    updating = true;
-    updateDelta(delta);
+    if (enabled) {
+        delta = roll
+            ? (max(0, delta) + 1) % 4
+            : min(delta + 1, 3);
+        inputTimer.stop();
+        updating = true;
+        updateDelta(delta);
+    }
 }
 
-// void Score::decreaseDelta(bool roll) {
-//     delta = roll
-//         ? (min(0, delta) - 1) % 4
-//         : max(delta - 1, -3);
-//     inputTimer.stop();
-//     updating = true;
-//     updateDelta(delta);
-// }
+void Score::decreaseDelta(bool roll) {
+    if (enabled) {
+        delta = roll
+            ? (min(0, delta) - 1) % 4
+            : max(delta - 1, -3);
+        inputTimer.stop();
+        updating = true;
+        updateDelta(delta);
+    }
+}
 
 void Score::increaseScore() {
-    score = limitScore(score + 1);
-    updateScore();
-    clearDelta();
+    if (enabled) {
+        score = limitScore(score + 1);
+        prevDelta = 0;
+        updateScore();
+        clearDelta();
+        onUpdate(score);
+    }
 }
 
 void Score::decreaseScore() {
-    score = limitScore(score - 1);
-    updateScore();
-    clearDelta();
+    if (enabled) {
+        score = limitScore(score - 1);
+        prevDelta = 0;
+        updateScore();
+        clearDelta();
+        onUpdate(score);
+    }
 }
 
 uint8_t Score::limitScore(int16_t score) {
@@ -152,6 +183,7 @@ void Score::loopInput() {
                 updateScore();
                 onUpdate(score);
                 flashTimer.reset();
+                beeper->confirm();
             }
             updateDelta(prevDelta, false);
             updating = false;
@@ -162,12 +194,9 @@ void Score::loopInput() {
 void Score::loopFlash() {
     flashTimer.loop();
     if (flashTimer.isRunning()) {
-        updateScore(flashTimer.elapsed() / COMFIRMATION_FLASH_DURATION_MS % 2 == 0);
-    } else {
-        updateScore();
+        updateScore(flashTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2);
     }
 }
-
 
 void Score::loop() {
     loopInput();

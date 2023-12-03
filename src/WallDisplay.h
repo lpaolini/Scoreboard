@@ -12,7 +12,7 @@ class WallDisplay {
         virtual void setGuestFouls(uint8_t fouls);
         virtual void setHomeTimeouts(uint8_t timeouts);
         virtual void setGuestTimeouts(uint8_t timeouts);
-        virtual void setBuzzer(bool buzzer);
+        virtual void setBuzzer(bool beeper);
 };
 
 #endif

@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 #include <LedControl.h>
-#include "Timer.h"
 #include "constants.h"
+#include "Beeper.h"
+#include "Timer.h"
 
 // Fouls
 
@@ -23,9 +24,9 @@
 
 class Extra {
     private:
-        const unsigned long INPUT_TIMER_MS = 1000;
-        const unsigned long CONFIRMATION_FLASH_COUNT = 2;
-        const unsigned long CONFIRMATION_FLASH_DURATION_MS = 100;
+        const unsigned long INPUT_TIMER_MS = 500;
+        const unsigned long CONFIRMATION_FLASH_COUNT = 6;
+        const unsigned long CONFIRMATION_FLASH_DURATION_MS = 75;
         const uint8_t FOULS_POS[2][3] = {{ 5, 6, 7 }, { 0, 1, 2 }};
         const uint8_t TIMEOUTS_POS[2][3] = {{ 0, 1, 2 }, { 7, 6, 5 }};
 
@@ -33,27 +34,34 @@ class Extra {
         uint8_t displayIndex;
         uint8_t brightness;
         bool invert;
-        void (*onUpdateFouls)(uint8_t fouls);
-        void (*onUpdateTimeouts)(uint8_t timeouts);
+        Beeper *beeper;
+
+        void (*onUpdateFouls)(uint8_t fouls) {};
+        void (*onUpdateTimeouts)(uint8_t timeouts) {};
+
+        bool enabled;
 
         uint8_t fouls = 0;
         uint8_t timeouts = 0;
+        uint8_t maxTimeouts = 0;
         bool updating = false;
         uint8_t prevFouls = 0;
         uint8_t prevTimeouts = 0;
         Timer inputTimer = Timer(INPUT_TIMER_MS, false);
-        Timer foulsFlashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
-        Timer timeoutsFlashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
+        Timer foulsConfirmationTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
+        Timer timeoutsConfirmationTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
         int decimalDigit(int value, int digit);
         void printTimeoutChar(uint8_t pos, bool show);
         void resetFouls();
         void resetTimeouts();
-        void update();
-        void updateFouls(bool show = true);
-        void updateTimeouts(bool show = true);
+        uint8_t getMaxTimeouts(uint8_t period);
+        void updateFouls(uint8_t fouls, bool force = false);
+        void updateTimeouts(uint8_t timeouts, bool force = false);
+        void updateFoulsDisplay(bool show = true);
+        void updateTimeoutsDisplay(bool show = true);
         void loopInput();
-        void loopFoulsFlash();
-        void loopTimeoutsFlash();
+        void loopFoulsConfirmation();
+        void loopTimeoutsConfirmation();
 
     public:
         Extra(
@@ -61,16 +69,21 @@ class Extra {
             uint8_t displayIndex,
             uint8_t brightness,
             bool invert,
-            void (*onUpdateFouls)(uint8_t fouls),
+            Beeper *beeper
+        );
+        void setup(
+            void (*onUpdateFouls)(uint8_t fouls), 
             void (*onUpdateTimeouts)(uint8_t timeouts)
         );
-        void setup();
         void reset();
-        void resetPeriod();
+        void enable();
+        void disable();
+        void setPeriod(uint8_t period);
         void increaseFouls();
         void decreaseFouls();
         void increaseTimeouts();
         void decreaseTimeouts();
+        void lastTwoMinutes();
         void loop();
 };
 

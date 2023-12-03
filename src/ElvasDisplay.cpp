@@ -1,36 +1,25 @@
 #include "ElvasDisplay.h"
 
-ElvasDisplay::ElvasDisplay(uint8_t outputPin) {
+ElvasDisplay::ElvasDisplay(uint8_t outputPin, uint8_t ledPin) {
     this->outputPin = outputPin;
+    this->ledPin = ledPin;
     init();
 }
 
-void ElvasDisplay::init() {
+void ElvasDisplay::setup() {
+    pinMode(outputPin, OUTPUT);
+    pinMode(ledPin, OUTPUT);
+    reset();
+}
+
+void ElvasDisplay::reset() {
     for (uint8_t i = 0; i < DATA_LENGTH; i++) {
         state.data[i] = 0;
     }
     nextBit = 0;
-
-    pinMode(outputPin, OUTPUT);
-
-    // Timer1.initialize(BIT_DURATION_MICROSECONDS);
-    // Timer1.attachInterrupt([this] { this->update(); });
-    // Timer1.start();
-
-    // timer.begin([this] { this->update(); }, BIT_DURATION_MICROSECONDS);
-
-    // timer.every(BIT_DURATION_MICROSECONDS, onTimer, this);
-}
-
-// void ElvasDisplay::onTimer(void *ptr) {
-//     ((ElvasDisplay *)ptr)->update();
-// }
-
-void ElvasDisplay::setup() {
-    // timer.setPeriod(BIT_DURATION_MICROSECONDS);
-    // timer.attachInterrupt(&ElvasDisplay::update, this);
-    // timer.start();
-    // timer.begin([this] { this->update(); }, BIT_DURATION_MICROSECONDS);
+    setUnknown1(true);
+    setUnknown2(true);
+    forceUpdate();
 }
 
 int ElvasDisplay::decimalDigit(int value, int digit) {
@@ -46,63 +35,96 @@ void ElvasDisplay::setOutput(bool level) {
     digitalWrite(outputPin, level != INVERT_OUTPUT);
 }
 
-void ElvasDisplay::triggerUpdate() {
-    triggeredUpdate = true;
+void ElvasDisplay::copyState(void *dst, const void *src) {
+    noInterrupts();
+    memcpy(dst, src, DATA_LENGTH * sizeof(uint8_t));
+    interrupts();
+}
+
+void ElvasDisplay::check() {
+    copyState(nextData, state.data);
+    updateRequired = memcmp(nextData, data, DATA_LENGTH * sizeof(uint8_t)) != 0;
+}
+
+void ElvasDisplay::forceUpdate() {
+    updateRequired = true;
 }
 
 void ElvasDisplay::update() {
-    static uint8_t data[DATA_LENGTH];
-    if (continuousUpdate || triggeredUpdate || nextBit != 0) {
-
-        if ((continuousUpdate || triggeredUpdate) && nextBit == 0) {
+    if (updateRequired || nextBit != 0) {
+        if (nextBit == 0) {
             // create data snapshop and re-arm trigger
-            noInterrupts();
-            memcpy(data, state.data, DATA_LENGTH * sizeof(uint8_t));
-            interrupts();
-            triggeredUpdate = false;
+            copyState(data, nextData);
+            updateRequired = false;
+            digitalWrite(ledPin, true);
+            #ifdef SERIAL_DEBUG
+                Serial.print("Elvas:");
+            #endif
         }
 
         if (nextBit < START_LENGTH) {
-            // head (start pulse)
+            // head
             setOutput(HIGH);
-        } else if (nextBit > 110) {
-            // tail (no data)
-            setOutput(LOW);
-        } else {
+        } else if (nextBit < START_LENGTH + 8 * DATA_LENGTH) {
             // data
             uint8_t dataBit = nextBit - START_LENGTH;
             uint8_t bytePtr = dataBit >> 3;
             uint8_t bitPtr = dataBit & 7;
             uint8_t bitValue = data[bytePtr] & (0b10000000 >> bitPtr); // MSB to LSB
             setOutput(bitValue);
+            #ifdef SERIAL_DEBUG
+                dataBit % 8 || Serial.print(' ');
+                Serial.print(bitValue ? 'O' : '.');
+            #endif
+        } else {
+            // tail
+            setOutput(LOW);
         }
 
-        if (nextBit == SEQUENCE_LENGTH - 1) {
-            nextBit = 0;
-        } else {
+        if (nextBit < SEQUENCE_LENGTH - 1) {
             nextBit++;
+        } else {
+            // end of sequence
+            nextBit = 0;
+            digitalWrite(ledPin, false);
+            #ifdef SERIAL_DEBUG
+                Serial.println();
+            #endif
         }
+    } else {
+        check();
     }
 }
 
 void ElvasDisplay::setTime(unsigned long time) {
-    if (time > 0) {
-        uint8_t min = time / 60000;
-        uint8_t sec = time % 60000 / 1000;
-        uint8_t tenth = time % 1000 / 100;
-        if (min == 0) {
-            state.fields.time3 = decimalDigit(sec, 1);
-            state.fields.time2 = decimalDigit(sec, 0);
-            state.fields.time1 = decimalDigit(tenth, 0);
-            state.fields.time0 = 0;
-        } else {
-            state.fields.time3 = decimalDigit(min, 1);
-            state.fields.time2 = decimalDigit(min, 0);
-            state.fields.time1 = decimalDigit(sec, 1);
-            state.fields.time0 = decimalDigit(sec, 0);
-        }
-        triggerUpdate();
+    if (time <= 59900) {
+        setTimeSecTenth(time);
     } else {
+        setTimeMinSec(time);
+    }
+}
+
+void ElvasDisplay::setTimeMinSec(unsigned long time) {
+    unsigned long adjustedTime = time + 999; // adjust for truncation to whole seconds
+    uint8_t min = adjustedTime / 60000;
+    uint8_t sec = adjustedTime % 60000 / 1000;
+    state.fields.time3 = decimalDigit(min, 1);
+    state.fields.time2 = decimalDigit(min, 0);
+    state.fields.time1 = decimalDigit(sec, 1);
+    state.fields.time0 = decimalDigit(sec, 0);
+}
+
+void ElvasDisplay::setTimeSecTenth(unsigned long time) {
+    unsigned long adjustedTime = time + 99; // adjust for truncation to tenths of seconds
+    uint8_t sec = adjustedTime % 60000 / 1000;
+    uint8_t tenth = adjustedTime % 1000 / 100;
+    state.fields.time3 = decimalDigit(sec, 1);
+    state.fields.time2 = decimalDigit(sec, 0);
+    state.fields.time1 = decimalDigit(tenth, 0);
+    state.fields.time0 = 0;
+
+    if (sec == 0 && tenth == 0) {
+        setUnknown2(false);
         setBuzzer(true);
         buzzer.reset();
     }
@@ -114,7 +136,6 @@ void ElvasDisplay::setHomeScore(uint8_t score) {
         state.fields.homeScore1 = decimalDigit(score, 1);
         state.fields.homeScore0 = decimalDigit(score, 0);
     }
-    triggerUpdate();
 }
 
 void ElvasDisplay::setGuestScore(uint8_t score) {
@@ -123,7 +144,6 @@ void ElvasDisplay::setGuestScore(uint8_t score) {
         state.fields.guestScore1 = decimalDigit(score, 1);
         state.fields.guestScore0 = decimalDigit(score, 0);
     }
-    triggerUpdate();
 }
 
 void ElvasDisplay::setHomeFouls(uint8_t fouls) {
@@ -131,7 +151,6 @@ void ElvasDisplay::setHomeFouls(uint8_t fouls) {
         state.fields.homeFouls1 = decimalDigit(fouls, 1);
         state.fields.homeFouls0 = decimalDigit(fouls, 0);
     }
-    triggerUpdate();
 }
 
 void ElvasDisplay::setGuestFouls(uint8_t fouls) {
@@ -139,58 +158,38 @@ void ElvasDisplay::setGuestFouls(uint8_t fouls) {
         state.fields.guestFouls1 = decimalDigit(fouls, 1);
         state.fields.guestFouls0 = decimalDigit(fouls, 0);
     }
-    triggerUpdate();
 }
 
 void ElvasDisplay::setHomeTimeouts(uint8_t timeouts) {
     state.fields.homeTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
     state.fields.homeService = timeouts == 3 ? 1 : 0;
-    triggerUpdate();
 }
 
 void ElvasDisplay::setGuestTimeouts(uint8_t timeouts) {
-    state.fields.guestTimeouts = timeouts == 1 ? 1 : timeouts == 2 ? 3 : 0;
+    state.fields.guestTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
     state.fields.guestService = timeouts == 3 ? 1 : 0;
-    triggerUpdate();
-}
-
-void ElvasDisplay::setHomeService(uint8_t service) {
-    state.fields.homeService = service;
-    triggerUpdate();
-}
-
-void ElvasDisplay::setGuestService(uint8_t service) {
-    state.fields.guestService = service;
-    triggerUpdate();
 }
 
 void ElvasDisplay::setBuzzer(bool buzzer) {
     state.fields.buzzer = buzzer ? 1 : 0;
-    triggerUpdate();
 }
 
 void ElvasDisplay::setUnknown1(bool value) {
     state.fields.unknown1 = value;
-    triggerUpdate();
 }
 
 void ElvasDisplay::setUnknown2(bool value) {
     state.fields.unknown2 = value;
-    triggerUpdate();
-}
-
-void ElvasDisplay::setContinuousUpdate(bool continuousUpdate) {
-    this->continuousUpdate = continuousUpdate;
 }
 
 void ElvasDisplay::loopBuzzer() {
     buzzer.loop();
-    if (buzzer.isExpired()) {
+    if (buzzer.isTriggered()) {
         setBuzzer(false);
+        setUnknown2(true);
     }
 }
 
 void ElvasDisplay::loop() {
-    // timer.tick();
     loopBuzzer();
 }
