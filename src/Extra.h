@@ -24,7 +24,7 @@
 
 class Extra {
     private:
-        const unsigned long INPUT_TIMER_MS = 500;
+        const unsigned long INPUT_TIMER_MS = 600;
         const unsigned long CONFIRMATION_FLASH_COUNT = 6;
         const unsigned long CONFIRMATION_FLASH_DURATION_MS = 75;
         const uint8_t FOULS_POS[2][3] = {{ 5, 6, 7 }, { 0, 1, 2 }};

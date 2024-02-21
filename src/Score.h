@@ -23,7 +23,7 @@
 class Score {
     private:
         // make sure INPUT_TIMER_MS is not less than 2 * FLASH_TIMER_MS * FLASH_COUNT
-        const unsigned long INPUT_TIMER_MS = 500;
+        const unsigned long INPUT_TIMER_MS = 600;
         const unsigned long CONFIRMATION_FLASH_COUNT = 6;
         const unsigned long CONFIRMATION_FLASH_DURATION_MS = 75;
         const bool THREE_DIGIT_SCORE = false;
