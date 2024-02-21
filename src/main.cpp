@@ -24,7 +24,7 @@ Beeper *beeper = new Beeper(BUZZER_PIN);
 
 // displays
 
-ElvasDisplay *elvas = new ElvasDisplay(ELVAS_PIN, LED_PIN);
+WallDisplay *wallDisplay = new ElvasDisplay(ELVAS_PIN, LED_PIN);
 LedControl *displayBus = new LedControl(SPI_DISPLAY_DATA_PIN, SPI_DISPLAY_CLK_PIN, SPI_DISPLAY_CS_PIN, 4);
 Adafruit_7segment *timeDisplay = new Adafruit_7segment();
 Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, beeper);
@@ -42,37 +42,32 @@ ExtraButton guestExtraButton(GUEST_EXTRA_BUTTON_PIN, 750);
 PressButton timeButton(TIME_BUTTON_PIN);
 PressButton undoButton(UNDO_BUTTON_PIN);
 PressButton buzzerButton(BUZZER_BUTTON_PIN);
-PressHoldButtonPair adjustButtons(MINUS_BUTTON_PIN, PLUS_BUTTON_PIN, 2000, 500, 75, 5);
+PressHoldButtonPair adjustButtons(MINUS_BUTTON_PIN, PLUS_BUTTON_PIN, 2000, 500, 75, 10);
 
 // wiring
 
 void onHomeFoulsUpdate(uint8_t fouls) {
-    elvas->setHomeFouls(fouls);
+    wallDisplay->setHomeFouls(fouls);
 }
 
 void onHomeTimeoutsUpdate(uint8_t timeouts) {
-    elvas->setHomeTimeouts(timeouts);
+    wallDisplay->setHomeTimeouts(timeouts);
 }
 
 void onGuestFoulsUpdate(uint8_t fouls) {
-    elvas->setGuestFouls(fouls);
+    wallDisplay->setGuestFouls(fouls);
 }
 
 void onGuestTimeoutsUpdate(uint8_t timeouts) {
-    elvas->setGuestTimeouts(timeouts);
+    wallDisplay->setGuestTimeouts(timeouts);
 }
 
 void onTimeUpdate(unsigned long time) {
-    elvas->setTime(time);
+    wallDisplay->setTime(time);
 }
 
 void onGameMode(bool gameMode) {
-    if (gameMode) {
-        // homeScore->enable();
-        // guestScore->enable();
-        // homeExtra->enable();
-        // guestExtra->enable();
-    } else {
+    if (!gameMode) {
         homeScore->disable();
         guestScore->disable();
         homeExtra->disable();
@@ -94,21 +89,21 @@ void onLastTwoMinutes() {
 }
 
 void onHomeScoreUpdate(uint8_t score) {
-    elvas->setHomeScore(score);
+    wallDisplay->setHomeScore(score);
     gameTime->setHomeScore(score);
 }
 
 void onGuestScoreUpdate(uint8_t score) {
-    elvas->setGuestScore(score);
+    wallDisplay->setGuestScore(score);
     gameTime->setGuestScore(score);
 }
 
 void setupWallDisplay() {
-    elvas->setup();
+    wallDisplay->setup();
 }
 
 void loopWallDisplay() {
-    elvas->loop();
+    wallDisplay->loop();
 }
 
 void setupControllers() {
@@ -145,7 +140,7 @@ void softReset() {
     homeExtra->reset();
     guestExtra->reset();
     gameTime->reset();
-    elvas->reset();
+    wallDisplay->reset();
     beeper->ready();
 }
 
@@ -189,7 +184,7 @@ void setupButtons() {
         .press([] {
             if (undoButton.isPressed()) {
                 beeper->click();
-                // adjustButtons.repeatDisable(); 
+                // adjustButtons.repeatDisable();
                 // homeScore->decreaseDelta();
                 homeScore->undo();
             } else {
@@ -210,7 +205,7 @@ void setupButtons() {
         .press([] {
             if (undoButton.isPressed()) {
                 beeper->click();
-                // adjustButtons.repeatDisable(); 
+                // adjustButtons.repeatDisable();
                 // guestScore->decreaseDelta();
                 guestScore->undo();
             } else {
@@ -277,12 +272,14 @@ void setupButtons() {
 
     adjustButtons.setup()
         .press1([] {
+            beeper->click();
             adjustIncrease(false);
         })
         .pressHoldRepeat1([] {
             adjustIncrease(true);
         })
         .press2([] {
+            beeper->click();
             adjustDecrease(false);
         })
         .pressHoldRepeat2([] {
@@ -302,9 +299,9 @@ void setupButtons() {
     buzzerButton.setup()
         .press([] {
             beeper->click();
-            elvas->setBuzzer(true);
+            wallDisplay->setBuzzer(true);
         })
-        .release([] { elvas->setBuzzer(false); });
+        .release([] { wallDisplay->setBuzzer(false); });
 }
 
 void loopButtons() {
@@ -320,54 +317,12 @@ void loopButtons() {
 
 void setupTimer() {
     Timer1.initialize(BIT_DURATION_MICROSECONDS);
-    Timer1.attachInterrupt([] { elvas->update(); });
+    Timer1.attachInterrupt([] { wallDisplay->update(); });
     Timer1.start();
-}
-
-void test() {
-    displayBus->shutdown(0, false);
-    displayBus->shutdown(1, false);
-    displayBus->shutdown(2, false);
-    displayBus->shutdown(3, false);
-    timeDisplay->begin(TIME_DISPLAY_ADDR);
-
-    displayBus->setIntensity(0, 2);
-    displayBus->setIntensity(1, 2);
-    displayBus->setIntensity(2, 2);
-    displayBus->setIntensity(3, 2);
-    timeDisplay->setBrightness(2);
-
-    displayBus->clearDisplay(0);
-    displayBus->clearDisplay(1);
-    displayBus->clearDisplay(2);
-    displayBus->clearDisplay(3);
-    timeDisplay->clear();
-    timeDisplay->writeDisplay();
-    
-    for (uint8_t display = 0; display < 4; display++) {
-        for (uint8_t digit = 0; digit < 8; digit++) {
-            displayBus->setDigit(display, digit, 8, false);            
-        }
-    }
-    for (uint8_t digit = 0; digit < 4; digit++) {
-        timeDisplay->writeDigitNum(digit > 1 ? digit + 1 : digit, 8, false);
-        timeDisplay->writeDisplay();
-    }
-    delay(1000);
-
-    displayBus->clearDisplay(0);
-    displayBus->clearDisplay(1);
-    displayBus->clearDisplay(2);
-    displayBus->clearDisplay(3);
-    timeDisplay->clear();
-    timeDisplay->writeDisplay();
-
-    delay(500);
 }
 
 void setup() {
     Serial.begin(230400); 
-    // test();
     setupControllers();
     setupBuzzer();
     setupButtons();

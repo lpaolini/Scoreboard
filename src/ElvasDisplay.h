@@ -85,6 +85,8 @@ class ElvasDisplay : public WallDisplay {
         void check();
         void setTimeMinSec(unsigned long time);
         void setTimeSecTenth(unsigned long time);
+        void setUnknown1(bool value);
+        void setUnknown2(bool value);
         void loopBuzzer();
 
     public:
@@ -102,8 +104,6 @@ class ElvasDisplay : public WallDisplay {
         void setHomeTimeouts(uint8_t timeouts);
         void setGuestTimeouts(uint8_t timeouts);
         void setBuzzer(bool buzzer);
-        void setUnknown1(bool value);
-        void setUnknown2(bool value);
         void loop();
 };
 

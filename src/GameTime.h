@@ -76,7 +76,7 @@ class GameTime {
             Beeper *beeper
         );
         void setup(
-            void (*onUpdate)(unsigned long remaining),
+            void (*onUpdate)(unsigned long time),
             void (*onGameMode)(bool gameMode),
             void (*onResetPeriod)(uint8_t period),
             void (*onLastTwoMinutes)()

@@ -14,10 +14,6 @@ Score::Score(
     this->beeper = beeper;
 }
 
-// void Score::setOnUpdate(void (*onUpdate)(uint8_t score)) {
-//     this->onUpdate = onUpdate;
-// }
-
 void Score::setup(void (*onUpdate)(uint8_t score)) {
     this->onUpdate = onUpdate;
     display->shutdown(displayIndex, true);

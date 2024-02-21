@@ -13,7 +13,7 @@ GameTime::GameTime(
 }
 
 void GameTime::setup(
-    void (*onUpdate)(unsigned long remaining),
+    void (*onUpdate)(unsigned long time),
     void (*onGameMode)(bool gameMode),
     void (*onResetPeriod)(uint8_t period),
     void (*onLastTwoMinutes)()
@@ -78,7 +78,7 @@ void GameTime::showTime() {
 
     showLastTwoMinutesAlert(time);
 
-    if (time <= 59900) {
+    if ((phase == REGULAR_TIME || phase == EXTRA_TIME) && time <= 59900) {
         showSecTenth(time);
     } else {
         showMinSec(time);
