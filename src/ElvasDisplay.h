@@ -15,6 +15,7 @@ class ElvasDisplay : public WallDisplay {
         const uint8_t SEQUENCE_LENGTH = 120;
         const bool INVERT_OUTPUT = false;
         const uint16_t BUZZER_DURATION_MS = 3000;
+        const uint8_t DIGIT_OFF = 10;
 
         typedef union State {
             struct Fields {

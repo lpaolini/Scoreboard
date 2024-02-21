@@ -120,8 +120,8 @@ void ElvasDisplay::setTimeSecTenth(unsigned long time) {
     uint8_t tenth = adjustedTime % 1000 / 100;
     state.fields.time3 = decimalDigit(sec, 1);
     state.fields.time2 = decimalDigit(sec, 0);
-    state.fields.time1 = decimalDigit(tenth, 0);
-    state.fields.time0 = 0;
+    state.fields.time1 = DIGIT_OFF; // off
+    state.fields.time0 = decimalDigit(tenth, 0);
 
     if (sec == 0 && tenth == 0) {
         setUnknown2(false);
