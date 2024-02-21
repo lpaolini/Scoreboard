@@ -144,8 +144,8 @@ void Extra::resetTimeouts() {
 }
 
 void Extra::increaseTimeouts() {
-    if (timeouts < MAX_TIMEOUTS) {
-        updateTimeouts(min(timeouts + 1, maxTimeouts));
+    if (timeouts < maxTimeouts) {
+        updateTimeouts(timeouts + 1);
     } else {
         beeper->notAllowed();
     }
