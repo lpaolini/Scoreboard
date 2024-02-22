@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "Timer.h"
+#include "State.h"
 #include "WallDisplay.h"
 #include "constants.h"
 
@@ -70,13 +71,14 @@ class ElvasDisplay : public WallDisplay {
             uint8_t data[DATA_LENGTH];
         } ElvasDisplayState;
 
-        uint8_t nextData[DATA_LENGTH];
-        uint8_t data[DATA_LENGTH];
-
         ElvasDisplayState state;
+        ElvasDisplayState nextState;
+        ElvasDisplayState updateState;
+
         uint8_t outputPin;
         uint8_t ledPin;
         Timer buzzer = Timer(BUZZER_DURATION_MS, false);
+        bool timeDisplayEnabled;
 
         volatile uint8_t nextBit;
         int decimalDigit(int value, int digit);
@@ -95,6 +97,7 @@ class ElvasDisplay : public WallDisplay {
         void reset();
         void setOutput(bool level);
         void update();
+        void stateChange(Mode mode, Phase phase, uint8_t period);
         void forceUpdate();
         void setTime(unsigned long time);
         void setHomeScore(uint8_t score);

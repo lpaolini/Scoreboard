@@ -4,15 +4,17 @@ GameTime::GameTime(
     Adafruit_7segment *display,
     uint8_t address,
     uint8_t brightness,
+    State *state,
     Beeper *beeper
 ) {
     this->display = display;
     this->address = address;
     this->brightness = brightness;
+    this->state = state;
     this->beeper = beeper;
 }
 
-void GameTime::setup(
+void GameTime::setup( 
     void (*onUpdate)(unsigned long time),
     void (*onGameMode)(bool gameMode),
     void (*onResetPeriod)(uint8_t period),
@@ -36,9 +38,9 @@ uint8_t GameTime::presetCount() {
 }
 
 void GameTime::reset() {
-    mode = SET_STEP;
-    phase = REGULAR_TIME;
-    period = 1;
+    state->setMode(SET_STEP);
+    state->setPhase(REGULAR_TIME);
+    state->setPeriod(1);
     homeScore = 0;
     guestScore = 0;
     currentPreset = defaultPreset;
@@ -46,22 +48,22 @@ void GameTime::reset() {
 }
 
 void GameTime::resetPeriod(bool advancePeriod) {
-    if (phase != END_OF_GAME) {
+    if (state->getPhase() != END_OF_GAME) {
         if (advancePeriod) {
             increaseStep();
         }
         onGameMode(false);
-        mode = SET_STEP;
+        state->setMode(SET_STEP);
         time = preset[currentPreset];
     }
 }
 
 bool GameTime::isRunning() {
-    return mode == RUN;
+    return state->getMode() == RUN;
 }
 
 bool GameTime::isEndOfPeriod() {
-    return mode == STOP && time == 0;
+    return state->getMode() == STOP && time == 0;
 }
 
 int GameTime::decimalDigit(int value, int digit) {
@@ -78,14 +80,14 @@ void GameTime::showTime() {
 
     showLastTwoMinutesAlert(time);
 
-    if ((phase == REGULAR_TIME || phase == EXTRA_TIME) && time <= 59900) {
+    if ((state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME) && time <= 59900) {
         showSecTenth(time);
     } else {
         showMinSec(time);
     }
 
-    if ((mode == RUN || mode == STOP) && lastTime != time) {
-        if (mode == RUN && phase == REGULAR_TIME && period == 4 && lastTime > 120000 && time <= 120000) {
+    if ((state->getMode() == RUN || state->getMode() == STOP) && lastTime != time) {
+        if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && lastTime > 120000 && time <= 120000) {
             onLastTwoMinutes();
         }
         lastTime = time;
@@ -103,7 +105,7 @@ void GameTime::showMinSec(unsigned long time) {
     display->writeDigitNum(1, decimalDigit(min, 0), false);
     display->writeDigitNum(3, decimalDigit(sec, 1), false);
     display->writeDigitNum(4, decimalDigit(sec, 0), false);
-    display->drawColon(mode == RUN ? (time) / 150 % 2 : true);
+    display->drawColon(state->getMode() == RUN ? (time) / 150 % 2 : true);
     display->writeDisplay();
 }
 
@@ -124,7 +126,7 @@ void GameTime::showSecTenth(unsigned long time) {
 }
 
 void GameTime::showLastTwoMinutesAlert(unsigned long time) {
-    if (mode == RUN && phase == REGULAR_TIME && period == 4 && time <= 120000 && time / 250 % 2) {
+    if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && time <= 120000 && time / 250 % 2) {
         display->writeDigitRaw(0, 0b01001001);
     } else {
         display->writeDigitRaw(0, 0b00000000);
@@ -134,7 +136,7 @@ void GameTime::showLastTwoMinutesAlert(unsigned long time) {
 void GameTime::showPeriod() {
     display->setDisplayState(true);
 
-    switch (phase) {
+    switch (state->getPhase()) {
         case PREPARATION:
             display->writeDigitAscii(0, 'P', false);
             display->writeDigitAscii(1, 'r', false);
@@ -144,7 +146,7 @@ void GameTime::showPeriod() {
         case REGULAR_TIME:
             display->writeDigitAscii(0, ' ', false);
             display->writeDigitAscii(1, 'P', false);
-            display->writeDigitNum(3, period, false);
+            display->writeDigitNum(3, state->getPeriod(), false);
             display->writeDigitAscii(4, ' ', false);
             break;
         case INTERVAL:
@@ -174,8 +176,8 @@ void GameTime::showPeriod() {
 }
 
 void GameTime::setTime() {
-    if (phase != END_OF_GAME) {
-        mode = SET_TIME;
+    if (state->getPhase() != END_OF_GAME) {
+        state->setMode(SET_TIME);
     }
 }
 
@@ -183,7 +185,7 @@ void GameTime::start() {
     if (time == 0) {
         resetPeriod(true);
     } else {
-        mode = RUN;
+        state->setMode(RUN);
         this->timeStart = millis();
         showTime();
         setBrightness(START_FLASH_BRIGHTNESS);
@@ -193,24 +195,24 @@ void GameTime::start() {
 }
 
 void GameTime::stop() {
-    mode = STOP;
+    state->setMode(STOP);
     this->timeStop = millis();
     showTime();
     beeper->timeStop();
 }
 
 void GameTime::next() {
-    switch (mode) {
+    switch (state->getMode()) {
         case SET_STEP:
             setTime();
             break;
         case SET_TIME:
-            switch (phase) {
+            switch (state->getPhase()) {
                 case PREPARATION:
                     onResetPeriod(0);
                     break;
                 case REGULAR_TIME:
-                    onResetPeriod(period);
+                    onResetPeriod(state->getPeriod());
                     break;
                 case INTERVAL:
                     onResetPeriod(6);
@@ -235,9 +237,9 @@ void GameTime::next() {
 }
 
 void GameTime::prev() {
-    switch (mode) {
+    switch (state->getMode()) {
         case SET_TIME:
-            mode = SET_STEP;
+            state->setMode(SET_STEP);
             break;
         case RUN:
             stop();
@@ -257,21 +259,21 @@ void GameTime::increaseRemainingTime() {
 }
 
 void GameTime::increaseStep() {
-    switch (phase) {
+    switch (state->getPhase()) {
         case PREPARATION:
-            phase = REGULAR_TIME;
-            period = 1;
+            state->setPhase(REGULAR_TIME);
+            state->setPeriod(1);
             break;
         case REGULAR_TIME:
             increasePeriod();
             break;
         case INTERVAL:
-            phase = REGULAR_TIME;
-            period = 3;
+            state->setPhase(REGULAR_TIME);
+            state->setPeriod(3);
             break;
         case EXTRA_TIME:
             if (!isParity()) {
-                phase = END_OF_GAME;
+                state->setPhase(END_OF_GAME);
             }
             break;
         default:
@@ -280,21 +282,21 @@ void GameTime::increaseStep() {
 }
 
 void GameTime::increasePeriod() {
-    switch (period) {
+    switch (state->getPeriod()) {
         case 1:
-            period = 2;
+            state->setPeriod(2);
             break;
         case 2:
-            phase = INTERVAL;
+            state->setPhase(INTERVAL);
             break;
         case 3:
-            period = 4;
+            state->setPeriod(4);
             break;
         case 4:
             if (isParity()) {
-                phase = EXTRA_TIME;
+                state->setPhase(EXTRA_TIME);
             } else {
-                phase = END_OF_GAME;
+                state->setPhase(END_OF_GAME);
             }
             break;
         default:
@@ -308,7 +310,7 @@ void GameTime::increaseTime() {
 }
 
 void GameTime::increase() {
-    switch (mode) {
+    switch (state->getMode()) {
         case STOP: increaseRemainingTime(); break;
         case SET_STEP: increaseStep(); break;
         case SET_TIME: increaseTime(); break;
@@ -317,22 +319,22 @@ void GameTime::increase() {
 }
 
 void GameTime::decreaseStep() {
-    switch (phase) {
+    switch (state->getPhase()) {
         case END_OF_GAME:
             if (isParity()) {
-                phase = EXTRA_TIME;
+                state->setPhase(EXTRA_TIME);
             } else {
-                phase = REGULAR_TIME;
-                period = 4;
+                state->setPhase(REGULAR_TIME);
+                state->setPeriod(4);
             }
             break;
         case EXTRA_TIME:
-            phase = REGULAR_TIME;
-            period = 4;
+            state->setPhase(REGULAR_TIME);
+            state->setPeriod(4);
             break;
         case INTERVAL:
-            phase = REGULAR_TIME;
-            period = 2;
+            state->setPhase(REGULAR_TIME);
+            state->setPeriod(2);
             break;
         case REGULAR_TIME:
             decreasePeriod();
@@ -343,18 +345,18 @@ void GameTime::decreaseStep() {
 }
 
 void GameTime::decreasePeriod() {
-    switch (period) {
+    switch (state->getPeriod()) {
         case 1:
-            phase = PREPARATION;
+            state->setPhase(PREPARATION);
             break;
         case 2:
-            period = 1;
+            state->setPeriod(1);
             break;
         case 3:
-            phase = INTERVAL;
+            state->setPhase(INTERVAL);
             break;
         case 4:
-            period = 3;
+            state->setPeriod(3);
             break;
         default:
             break;
@@ -375,7 +377,7 @@ void GameTime::decreaseRemainingTime() {
 }
 
 void GameTime::decrease() {
-    switch (mode) {
+    switch (state->getMode()) {
         case STOP: decreaseRemainingTime(); break;
         case SET_STEP: decreaseStep(); break;
         case SET_TIME: decreaseTime(); break;
@@ -427,7 +429,7 @@ void GameTime::loop() {
     if (startFlash.isExpired()) {
         setBrightness(brightness);
     }
-    switch (mode) {
+    switch (state->getMode()) {
         case STOP: loopStop(); break;
         case RUN: loopRun(); break;
         case SET_TIME: loopSetTime(); break;

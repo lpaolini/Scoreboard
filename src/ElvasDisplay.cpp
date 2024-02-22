@@ -22,6 +22,23 @@ void ElvasDisplay::reset() {
     forceUpdate();
 }
 
+void ElvasDisplay::stateChange(Mode mode, Phase phase, uint8_t period) {
+    switch (mode) {
+        case STOP:
+            timeDisplayEnabled = true;
+            break;
+        case RUN:
+            timeDisplayEnabled = true;
+            break;
+        case SET_STEP:
+            timeDisplayEnabled = false;
+            break;
+        case SET_TIME:
+            timeDisplayEnabled = false;
+            break;
+    }
+}
+
 int ElvasDisplay::decimalDigit(int value, int digit) {
     switch (digit) {
         case 0: return abs(value) % 10;
@@ -42,8 +59,14 @@ void ElvasDisplay::copyState(void *dst, const void *src) {
 }
 
 void ElvasDisplay::check() {
-    copyState(nextData, state.data);
-    updateRequired = memcmp(nextData, data, DATA_LENGTH * sizeof(uint8_t)) != 0;
+    copyState(nextState.data, state.data);
+    if (!timeDisplayEnabled) {
+        nextState.fields.time3 = DIGIT_OFF;
+        nextState.fields.time2 = DIGIT_OFF;
+        nextState.fields.time1 = DIGIT_OFF;
+        nextState.fields.time0 = DIGIT_OFF;
+    }
+    updateRequired = memcmp(nextState.data, updateState.data, DATA_LENGTH * sizeof(uint8_t)) != 0;
 }
 
 void ElvasDisplay::forceUpdate() {
@@ -54,7 +77,7 @@ void ElvasDisplay::update() {
     if (updateRequired || nextBit != 0) {
         if (nextBit == 0) {
             // create data snapshop and re-arm trigger
-            copyState(data, nextData);
+            copyState(updateState.data, nextState.data);
             updateRequired = false;
             digitalWrite(ledPin, true);
             #ifdef SERIAL_DEBUG
@@ -70,7 +93,7 @@ void ElvasDisplay::update() {
             uint8_t dataBit = nextBit - START_LENGTH;
             uint8_t bytePtr = dataBit >> 3;
             uint8_t bitPtr = dataBit & 7;
-            uint8_t bitValue = data[bytePtr] & (0b10000000 >> bitPtr); // MSB to LSB
+            uint8_t bitValue = updateState.data[bytePtr] & (0b10000000 >> bitPtr); // MSB to LSB
             setOutput(bitValue);
             #ifdef SERIAL_DEBUG
                 dataBit % 8 || Serial.print(' ');

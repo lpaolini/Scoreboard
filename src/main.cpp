@@ -6,7 +6,9 @@
 
 #include "constants.h"
 
+#include "State.h"
 #include "Beeper.h"
+
 #include "ElvasDisplay.h"
 #include "Score.h"
 #include "Extra.h"
@@ -17,6 +19,10 @@
 #include "PressHoldButtonPair.h"
 #include "ScoreButton.h"
 #include "ExtraButton.h"
+
+// state
+
+State *state = new State();
 
 // beeper
 
@@ -31,7 +37,7 @@ Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, beeper);
 Extra *guestExtra = new Extra(displayBus, 1, BRIGHTNESS, true, beeper);
 Score *homeScore = new Score(displayBus, 2, BRIGHTNESS, true, beeper);
 Score *guestScore = new Score(displayBus, 3, BRIGHTNESS, false, beeper);
-GameTime *gameTime = new GameTime(timeDisplay, TIME_DISPLAY_ADDR, BRIGHTNESS, beeper);
+GameTime *gameTime = new GameTime(timeDisplay, TIME_DISPLAY_ADDR, BRIGHTNESS, state, beeper);
 
 // controls
 
@@ -75,6 +81,10 @@ void onGameMode(bool gameMode) {
     }
 }
 
+void onStateChange(Mode mode, Phase phase, uint8_t period) {
+    wallDisplay->stateChange(mode, phase, period);
+}
+
 void onResetPeriod(uint8_t period) {
     homeScore->setPeriod(period);
     guestScore->setPeriod(period);
@@ -107,6 +117,7 @@ void loopWallDisplay() {
 }
 
 void setupControllers() {
+    state->setOnUpdate(onStateChange);
     gameTime->setup(onTimeUpdate, onGameMode, onResetPeriod, onLastTwoMinutes);
     homeScore->setup(onHomeScoreUpdate);
     homeExtra->setup(onHomeFoulsUpdate, onHomeTimeoutsUpdate);

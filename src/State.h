@@ -3,15 +3,19 @@
 
 #include <Arduino.h>
 
-enum Mode {SET_STEP, SET_TIME, GAME};
+enum Mode {STOP, RUN, SET_STEP, SET_TIME};
 enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME, END_OF_GAME};
+
+// enum Time {STOP, RUN}
+// enum Mode {SET_STEP, SET_TIME, GAME};
+// enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME, END_OF_GAME};
 
 class State {
     private:
         void (*onUpdate)(Mode mode, Phase phase, uint8_t period) = nullptr;
 
         Mode mode = SET_STEP;
-        Phase phase = PREPARATION;
+        Phase phase = REGULAR_TIME;
         uint8_t period = 1;
 
         void update() {

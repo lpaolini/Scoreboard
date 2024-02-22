@@ -5,6 +5,7 @@
 #include <Adafruit_LEDBackpack.h>
 #include "Beeper.h"
 #include "Timer.h"
+#include "State.h"
 
 class GameTime {
     private:
@@ -19,6 +20,7 @@ class GameTime {
         Adafruit_7segment *display;
         uint8_t address;
         uint8_t brightness;
+        State *state;
         Beeper *beeper;
 
         void (*onUpdate)(unsigned long time) {};
@@ -28,12 +30,6 @@ class GameTime {
 
         uint8_t currentPreset = defaultPreset;
 
-        enum Mode {STOP, RUN, SET_STEP, SET_TIME};
-        enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME, END_OF_GAME};
-
-        Mode mode;
-        Phase phase;
-        uint8_t period;
         uint8_t homeScore;
         uint8_t guestScore;
 
@@ -73,6 +69,7 @@ class GameTime {
             Adafruit_7segment *display,
             uint8_t address,
             uint8_t brightness,
+            State *state,
             Beeper *beeper
         );
         void setup(
