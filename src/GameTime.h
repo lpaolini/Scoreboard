@@ -23,7 +23,7 @@ class GameTime {
         State *state;
         Beeper *beeper;
 
-        void (*onUpdate)(unsigned long time) {};
+        void (*onTimeUpdate)(unsigned long time) {};
         void (*onResetPeriod)(uint8_t period) {};
         void (*onGameMode)(bool gameMode) {};
         void (*onLastTwoMinutes)() {};
@@ -73,7 +73,7 @@ class GameTime {
             Beeper *beeper
         );
         void setup(
-            void (*onUpdate)(unsigned long time),
+            void (*onTimeUpdate)(unsigned long time),
             void (*onGameMode)(bool gameMode),
             void (*onResetPeriod)(uint8_t period),
             void (*onLastTwoMinutes)()

@@ -15,12 +15,12 @@ GameTime::GameTime(
 }
 
 void GameTime::setup( 
-    void (*onUpdate)(unsigned long time),
+    void (*onTimeUpdate)(unsigned long time),
     void (*onGameMode)(bool gameMode),
     void (*onResetPeriod)(uint8_t period),
     void (*onLastTwoMinutes)()
 ) {
-    this->onUpdate = onUpdate;
+    this->onTimeUpdate = onTimeUpdate;
     this->onGameMode = onGameMode;
     this->onResetPeriod = onResetPeriod;
     this->onLastTwoMinutes = onLastTwoMinutes;
@@ -91,7 +91,7 @@ void GameTime::showTime() {
             onLastTwoMinutes();
         }
         lastTime = time;
-        onUpdate(time);
+        onTimeUpdate(time);
     }
 }
 
@@ -394,8 +394,7 @@ void GameTime::setGuestScore(uint8_t guestScore) {
 }
 
 void GameTime::loopStop() {
-    unsigned long now = millis();
-    bool show = (hold.isRunning() && !hold.isTriggered()) || (now - timeStop) / STOP_FLASH_DURATION_MS % 2;
+    bool show = (hold.isRunning() && !hold.isTriggered()) || (millis() - timeStop) / STOP_FLASH_DURATION_MS % 2;
     display->setDisplayState(show);
 }
 
