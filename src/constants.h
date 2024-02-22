@@ -1,3 +1,6 @@
+#ifndef constants_h
+#define constants_h
+
 // #define SERIAL_DEBUG
 
 // Wall panel
@@ -46,3 +49,5 @@
 // Beeper
 
 #define BUZZER_PIN J10
+
+#endif
