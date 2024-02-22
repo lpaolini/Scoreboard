@@ -30,7 +30,7 @@ Beeper *beeper = new Beeper(BUZZER_PIN);
 
 // displays
 
-WallDisplay *wallDisplay = new ElvasDisplay(ELVAS_PIN, LED_PIN);
+WallDisplay *wallDisplay = new ElvasDisplay(ELVAS_PIN, LED_PIN, state);
 LedControl *displayBus = new LedControl(SPI_DISPLAY_DATA_PIN, SPI_DISPLAY_CLK_PIN, SPI_DISPLAY_CS_PIN, 4);
 Adafruit_7segment *timeDisplay = new Adafruit_7segment();
 Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, beeper);
@@ -81,8 +81,8 @@ void onGameMode(bool gameMode) {
     }
 }
 
-void onStateChange(Mode mode, Phase phase, uint8_t period) {
-    wallDisplay->stateChange(mode, phase, period);
+void onStateChange() {
+    wallDisplay->stateChange();
 }
 
 void onResetPeriod(uint8_t period) {

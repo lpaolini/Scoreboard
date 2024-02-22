@@ -1,8 +1,9 @@
 #include "ElvasDisplay.h"
 
-ElvasDisplay::ElvasDisplay(uint8_t outputPin, uint8_t ledPin) {
+ElvasDisplay::ElvasDisplay(uint8_t outputPin, uint8_t ledPin, State *state) {
     this->outputPin = outputPin;
     this->ledPin = ledPin;
+    this->state = state;
     init();
 }
 
@@ -14,7 +15,7 @@ void ElvasDisplay::setup() {
 
 void ElvasDisplay::reset() {
     for (uint8_t i = 0; i < DATA_LENGTH; i++) {
-        state.data[i] = 0;
+        currentState.data[i] = 0;
     }
     nextBit = 0;
     setUnknown1(true);
@@ -22,19 +23,28 @@ void ElvasDisplay::reset() {
     forceUpdate();
 }
 
-void ElvasDisplay::stateChange(Mode mode, Phase phase, uint8_t period) {
-    switch (mode) {
+void ElvasDisplay::stateChange() {
+    switch (state->getMode()) {
         case STOP:
-            timeDisplayEnabled = true;
+            timeDisplay = TIME;
+            if (state->getPhase() == REGULAR_TIME) {
+                showPeriod = true;
+                lastTimeStopped = millis();
+            } else {
+                showPeriod = false;
+            }
             break;
         case RUN:
-            timeDisplayEnabled = true;
+            timeDisplay = TIME;
+            showPeriod = false;
             break;
         case SET_STEP:
-            timeDisplayEnabled = false;
+            timeDisplay = OFF;
+            showPeriod = false;
             break;
         case SET_TIME:
-            timeDisplayEnabled = false;
+            timeDisplay = OFF;
+            showPeriod = false;
             break;
     }
 }
@@ -59,12 +69,22 @@ void ElvasDisplay::copyState(void *dst, const void *src) {
 }
 
 void ElvasDisplay::check() {
-    copyState(nextState.data, state.data);
-    if (!timeDisplayEnabled) {
-        nextState.fields.time3 = DIGIT_OFF;
-        nextState.fields.time2 = DIGIT_OFF;
-        nextState.fields.time1 = DIGIT_OFF;
-        nextState.fields.time0 = DIGIT_OFF;
+    copyState(nextState.data, currentState.data);
+    switch (timeDisplay) {
+        case OFF:
+            nextState.fields.time3 = DIGIT_OFF;
+            nextState.fields.time2 = DIGIT_OFF;
+            nextState.fields.time1 = DIGIT_OFF;
+            nextState.fields.time0 = DIGIT_OFF;
+            break;
+        case PERIOD:
+            nextState.fields.time3 = DIGIT_OFF;
+            nextState.fields.time2 = state->getPeriod();
+            nextState.fields.time1 = DIGIT_OFF;
+            nextState.fields.time0 = DIGIT_OFF;
+            break;
+        default:
+            break;
     }
     updateRequired = memcmp(nextState.data, updateState.data, DATA_LENGTH * sizeof(uint8_t)) != 0;
 }
@@ -131,20 +151,20 @@ void ElvasDisplay::setTimeMinSec(unsigned long time) {
     unsigned long adjustedTime = time + 999; // adjust for truncation to whole seconds
     uint8_t min = adjustedTime / 60000;
     uint8_t sec = adjustedTime % 60000 / 1000;
-    state.fields.time3 = decimalDigit(min, 1);
-    state.fields.time2 = decimalDigit(min, 0);
-    state.fields.time1 = decimalDigit(sec, 1);
-    state.fields.time0 = decimalDigit(sec, 0);
+    currentState.fields.time3 = decimalDigit(min, 1);
+    currentState.fields.time2 = decimalDigit(min, 0);
+    currentState.fields.time1 = decimalDigit(sec, 1);
+    currentState.fields.time0 = decimalDigit(sec, 0);
 }
 
 void ElvasDisplay::setTimeSecTenth(unsigned long time) {
     unsigned long adjustedTime = time + 99; // adjust for truncation to tenths of seconds
     uint8_t sec = adjustedTime % 60000 / 1000;
     uint8_t tenth = adjustedTime % 1000 / 100;
-    state.fields.time3 = decimalDigit(sec, 1);
-    state.fields.time2 = decimalDigit(sec, 0);
-    state.fields.time1 = DIGIT_OFF; // off
-    state.fields.time0 = decimalDigit(tenth, 0);
+    currentState.fields.time3 = decimalDigit(sec, 1);
+    currentState.fields.time2 = decimalDigit(sec, 0);
+    currentState.fields.time1 = DIGIT_OFF; // off
+    currentState.fields.time0 = decimalDigit(tenth, 0);
 
     if (sec == 0 && tenth == 0) {
         setUnknown2(false);
@@ -155,54 +175,54 @@ void ElvasDisplay::setTimeSecTenth(unsigned long time) {
 
 void ElvasDisplay::setHomeScore(uint8_t score) {
     if (score <= MAX_SCORE) {
-        state.fields.homeScore2 = decimalDigit(score, 2);
-        state.fields.homeScore1 = decimalDigit(score, 1);
-        state.fields.homeScore0 = decimalDigit(score, 0);
+        currentState.fields.homeScore2 = decimalDigit(score, 2);
+        currentState.fields.homeScore1 = decimalDigit(score, 1);
+        currentState.fields.homeScore0 = decimalDigit(score, 0);
     }
 }
 
 void ElvasDisplay::setGuestScore(uint8_t score) {
     if (score <= MAX_SCORE) {
-        state.fields.guestScore2 = decimalDigit(score, 2);
-        state.fields.guestScore1 = decimalDigit(score, 1);
-        state.fields.guestScore0 = decimalDigit(score, 0);
+        currentState.fields.guestScore2 = decimalDigit(score, 2);
+        currentState.fields.guestScore1 = decimalDigit(score, 1);
+        currentState.fields.guestScore0 = decimalDigit(score, 0);
     }
 }
 
 void ElvasDisplay::setHomeFouls(uint8_t fouls) {
     if (fouls <= MAX_FOULS) {
-        state.fields.homeFouls1 = decimalDigit(fouls, 1);
-        state.fields.homeFouls0 = decimalDigit(fouls, 0);
+        currentState.fields.homeFouls1 = decimalDigit(fouls, 1);
+        currentState.fields.homeFouls0 = decimalDigit(fouls, 0);
     }
 }
 
 void ElvasDisplay::setGuestFouls(uint8_t fouls) {
     if (fouls <= MAX_FOULS) {
-        state.fields.guestFouls1 = decimalDigit(fouls, 1);
-        state.fields.guestFouls0 = decimalDigit(fouls, 0);
+        currentState.fields.guestFouls1 = decimalDigit(fouls, 1);
+        currentState.fields.guestFouls0 = decimalDigit(fouls, 0);
     }
 }
 
 void ElvasDisplay::setHomeTimeouts(uint8_t timeouts) {
-    state.fields.homeTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
-    state.fields.homeService = timeouts == 3 ? 1 : 0;
+    currentState.fields.homeTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
+    currentState.fields.homeService = timeouts == 3 ? 1 : 0;
 }
 
 void ElvasDisplay::setGuestTimeouts(uint8_t timeouts) {
-    state.fields.guestTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
-    state.fields.guestService = timeouts == 3 ? 1 : 0;
+    currentState.fields.guestTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
+    currentState.fields.guestService = timeouts == 3 ? 1 : 0;
 }
 
 void ElvasDisplay::setBuzzer(bool buzzer) {
-    state.fields.buzzer = buzzer ? 1 : 0;
+    currentState.fields.buzzer = buzzer ? 1 : 0;
 }
 
 void ElvasDisplay::setUnknown1(bool value) {
-    state.fields.unknown1 = value;
+    currentState.fields.unknown1 = value;
 }
 
 void ElvasDisplay::setUnknown2(bool value) {
-    state.fields.unknown2 = value;
+    currentState.fields.unknown2 = value;
 }
 
 void ElvasDisplay::loopBuzzer() {
@@ -215,4 +235,7 @@ void ElvasDisplay::loopBuzzer() {
 
 void ElvasDisplay::loop() {
     loopBuzzer();
+    if (showPeriod) {
+        timeDisplay = (millis() - lastTimeStopped) / 1000 % 3 == 2 ? PERIOD : TIME;
+    }
 }

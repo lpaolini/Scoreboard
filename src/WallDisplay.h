@@ -8,7 +8,7 @@ class WallDisplay {
         virtual void setup();
         virtual void reset();
         virtual void update();
-        virtual void stateChange(Mode mode, Phase phase, uint8_t period);
+        virtual void stateChange();
         virtual void setTime(unsigned long time);
         virtual void setHomeScore(uint8_t score);
         virtual void setGuestScore(uint8_t score);

@@ -18,7 +18,7 @@ class ElvasDisplay : public WallDisplay {
         const uint16_t BUZZER_DURATION_MS = 3000;
         const uint8_t DIGIT_OFF = 10;
 
-        typedef union State {
+        typedef union {
             struct Fields {
                 // byte 0
                 uint8_t time0          : 4; // 000
@@ -71,14 +71,19 @@ class ElvasDisplay : public WallDisplay {
             uint8_t data[DATA_LENGTH];
         } ElvasDisplayState;
 
-        ElvasDisplayState state;
+        State *state;
+
+        ElvasDisplayState currentState;
         ElvasDisplayState nextState;
         ElvasDisplayState updateState;
 
         uint8_t outputPin;
         uint8_t ledPin;
         Timer buzzer = Timer(BUZZER_DURATION_MS, false);
-        bool timeDisplayEnabled;
+
+        enum TimeDisplay {TIME, PERIOD, OFF} timeDisplay;
+        unsigned long lastTimeStopped;
+        bool showPeriod;
 
         volatile uint8_t nextBit;
         int decimalDigit(int value, int digit);
@@ -92,12 +97,12 @@ class ElvasDisplay : public WallDisplay {
         void loopBuzzer();
 
     public:
-        ElvasDisplay(uint8_t outputPin, uint8_t ledPin);
+        ElvasDisplay(uint8_t outputPin, uint8_t ledPin, State *state);
         void setup();
         void reset();
         void setOutput(bool level);
         void update();
-        void stateChange(Mode mode, Phase phase, uint8_t period);
+        void stateChange();
         void forceUpdate();
         void setTime(unsigned long time);
         void setHomeScore(uint8_t score);

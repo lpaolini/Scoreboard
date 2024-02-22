@@ -12,7 +12,7 @@ enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME, END_OF_GAME};
 
 class State {
     private:
-        void (*onUpdate)(Mode mode, Phase phase, uint8_t period) = nullptr;
+        void (*onUpdate)() = nullptr;
 
         Mode mode = SET_STEP;
         Phase phase = REGULAR_TIME;
@@ -20,14 +20,14 @@ class State {
 
         void update() {
             if (onUpdate != nullptr) {
-                onUpdate(mode, phase, period);
+                onUpdate();
             }
         }
 
     public:
         State() {};
 
-        void setOnUpdate(void (*onUpdate)(Mode mode, Phase phase, uint8_t period)) {
+        void setOnUpdate(void (*onUpdate)()) {
             this->onUpdate = onUpdate;
         }
 
