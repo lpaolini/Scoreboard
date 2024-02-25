@@ -14,7 +14,6 @@ PressHoldButtonPair::PressHoldButtonPair(
     this->pressHoldRepeatDelay = pressHoldRepeatDelay;
     this->pressHoldRepeatMaxInterval = pressHoldRepeatMaxInterval;
     this->pressHoldRepeatMinInterval = pressHoldRepeatMinInterval;
-
     this->pressHoldRepeatInterval = pressHoldRepeatMaxInterval;
 }
 
@@ -24,17 +23,11 @@ PressHoldButtonPair& PressHoldButtonPair::setup() {
     button1 = new AceButton(&config, pin1);
     button2 = new AceButton(&config, pin2);
     config.setIEventHandler(this);
-
     config.setFeature(ButtonConfig::kFeatureLongPress);
-    // config.setFeature(ButtonConfig::kFeatureSuppressAfterLongPress);
-
     config.setFeature(ButtonConfig::kFeatureRepeatPress);
-    // config.setFeature(ButtonConfig::kFeatureSuppressAfterRepeatPress);
-
     config.setLongPressDelay(pressHoldDelay);
     config.setRepeatPressDelay(pressHoldRepeatDelay);
     config.setRepeatPressInterval(pressHoldRepeatInterval);
-
     return *this;
 }
 
