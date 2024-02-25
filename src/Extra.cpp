@@ -162,9 +162,7 @@ void Extra::decreaseTimeouts() {
 void Extra::updateTimeouts(uint8_t timeouts, bool force) {
     if (enabled || force) {
         this->timeouts = timeouts;
-        inputTimer.reset();
         timeoutsConfirmationTimer.stop();
-        updating = true;
         updateTimeoutsDisplay();
     }
 }
@@ -197,17 +195,17 @@ void Extra::loopInput() {
                 prevFouls = fouls;
                 beeper->confirm();
             }
-            if (timeouts != prevTimeouts) {
-                updateTimeoutsDisplay();
-                if (onUpdateTimeouts != nullptr) {
-                    onUpdateTimeouts(timeouts);
-                }
-                prevTimeouts = timeouts;
-                timeoutsConfirmationTimer.reset();
-                beeper->confirm();
-            }
             updating = false;
         }
+    }
+    if (timeouts != prevTimeouts) {
+        updateTimeoutsDisplay();
+        if (onUpdateTimeouts != nullptr) {
+            onUpdateTimeouts(timeouts);
+        }
+        prevTimeouts = timeouts;
+        timeoutsConfirmationTimer.reset();
+        beeper->confirm();
     }
 }
 
