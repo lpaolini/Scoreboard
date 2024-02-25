@@ -61,6 +61,11 @@ PressHoldButtonPair& PressHoldButtonPair::pressHoldRepeat2(void (*onPressHoldRep
     return *this;
 }
 
+PressHoldButtonPair& PressHoldButtonPair::pressBoth(void (*onPressBoth)(bool pressed)) {
+    this->onPressBoth = onPressBoth;
+    return *this;
+}
+
 PressHoldButtonPair& PressHoldButtonPair::pressHoldBoth(void (*onPressHoldBoth)(void)) {
     this->onPressHoldBoth = onPressHoldBoth;
     return *this;
@@ -72,13 +77,19 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
         case AceButton::kEventPressed:
             if (pin == pin1) {
                 pressed1 = true;
-                if (!pressed2 && onPress1 != nullptr) {
+                if (onPress1 != nullptr) {
                     onPress1();
+                }
+                if (pressed2 && onPressBoth != nullptr) {
+                    onPressBoth(true);
                 }
             } else if (pin == pin2) {
                 pressed2 = true;
-                if (!pressed1 && onPress2 != nullptr) {
+                if (onPress2 != nullptr) {
                     onPress2();
+                }
+                if (pressed1 && onPressBoth != nullptr) {
+                    onPressBoth(true);
                 }
             }
             break;
@@ -129,6 +140,9 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
                 repeatPressed1 = false;
                 repeatDisabled1 = false;
                 longPressedBoth = false;
+                if (pressed2 && onPressBoth != nullptr) {
+                    onPressBoth(false);
+                }
                 resetRepeatInterval();
             } else if (pin == pin2) {
                 pressed2 = false;
@@ -136,6 +150,9 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
                 repeatPressed2 = false;
                 repeatDisabled2 = false;
                 longPressedBoth = false;
+                if (pressed1 && onPressBoth != nullptr) {
+                    onPressBoth(false);
+                }
                 resetRepeatInterval();
             }
             break;

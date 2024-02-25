@@ -37,6 +37,7 @@ class PressHoldButtonPair : public IEventHandler {
         void (*onPressHold2)(void) = nullptr;
         void (*onPressHoldRepeat2)(void) = nullptr;
         void (*onBothPressed)(void) = nullptr;
+        void (*onPressBoth)(bool pressed) = nullptr;
         void (*onPressHoldBoth)(void) = nullptr;
         void handleEvent(AceButton* button, uint8_t eventType, uint8_t buttonState);
         void decreaseRepeatInterval();
@@ -58,6 +59,7 @@ class PressHoldButtonPair : public IEventHandler {
         PressHoldButtonPair& press2(void (*onPress2)(void));
         PressHoldButtonPair& pressHold2(void (*onPressHold2)(void));
         PressHoldButtonPair& pressHoldRepeat2(void (*onPressHoldRepeat2)(void));
+        PressHoldButtonPair& pressBoth(void (*onPressBoth)(bool pressed));
         PressHoldButtonPair& pressHoldBoth(void (*onPressHoldBoth)(void));
         void repeatDisable();
         void loop();
