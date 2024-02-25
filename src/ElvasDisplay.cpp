@@ -140,7 +140,7 @@ void ElvasDisplay::update() {
 }
 
 void ElvasDisplay::setTime(unsigned long time) {
-    if (time <= 59900) {
+    if (time <= 59900 && state->isGamePeriod()) {
         setTimeSecTenth(time);
     } else {
         setTimeMinSec(time);
