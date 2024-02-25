@@ -27,8 +27,8 @@
 class Beeper {
     private:
         struct Tone {
-            int frequency;
-            unsigned long duration;
+            unsigned int frequency;
+            unsigned int duration;
         };
         Tone READY[4] = {{NOTE_C6, 100}, {NOTE_E6, 100}, {NOTE_G6, 100}, {0, 0}};
         Tone CLICK[2] = {{NOTE_C7, 25}, {0, 0}};
