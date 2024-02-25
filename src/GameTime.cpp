@@ -16,12 +16,10 @@ GameTime::GameTime(
 
 void GameTime::setup( 
     void (*onTimeUpdate)(unsigned long time),
-    void (*onGameMode)(bool gameMode),
     void (*onResetPeriod)(),
     void (*onLastTwoMinutes)()
 ) {
     this->onTimeUpdate = onTimeUpdate;
-    this->onGameMode = onGameMode;
     this->onResetPeriod = onResetPeriod;
     this->onLastTwoMinutes = onLastTwoMinutes;
     display->begin(address);
@@ -52,7 +50,6 @@ void GameTime::resetPeriod(bool advancePeriod) {
         if (advancePeriod) {
             increaseStep();
         }
-        onGameMode(false);
         state->setMode(SET_STEP);
         time = preset[currentPreset];
         beeper->confirm();

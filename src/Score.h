@@ -67,6 +67,7 @@ class Score {
         void setup(void (*onUpdate)(uint8_t score));
         void reset();
         void enable(bool enabled);
+        void stateChange();
         void resetPeriod();
         void startTimer();
         void increaseDelta(bool roll = true);

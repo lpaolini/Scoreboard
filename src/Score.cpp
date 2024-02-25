@@ -40,6 +40,12 @@ void Score::enable(bool enabled) {
     this->enabled = enabled;
 }
 
+void Score::stateChange() {
+    if (!state->isGameMode()) {
+        enable(false);
+    }
+}
+
 void Score::resetPeriod() {
     enable(true);
 }

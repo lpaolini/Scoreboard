@@ -25,7 +25,6 @@ class GameTime {
 
         void (*onTimeUpdate)(unsigned long time) {};
         void (*onResetPeriod)() {};
-        void (*onGameMode)(bool gameMode) {};
         void (*onLastTwoMinutes)() {};
 
         uint8_t currentPreset = defaultPreset;
@@ -75,7 +74,6 @@ class GameTime {
         );
         void setup(
             void (*onTimeUpdate)(unsigned long time),
-            void (*onGameMode)(bool gameMode),
             void (*onResetPeriod)(),
             void (*onLastTwoMinutes)()
         );

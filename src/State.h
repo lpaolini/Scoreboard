@@ -66,7 +66,11 @@ class State {
         }
 
         bool isGamePeriod() {
-            return getPhase() == REGULAR_TIME || getPhase() == EXTRA_TIME;
+            return phase == REGULAR_TIME || phase == EXTRA_TIME;
+        }
+
+        bool isGameMode() {
+            return mode == RUN || mode == STOP;
         }
 
         uint8_t getMaxTimeouts() {

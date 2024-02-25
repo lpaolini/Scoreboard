@@ -75,17 +75,12 @@ void onTimeUpdate(unsigned long time) {
     wallDisplay->setTime(time);
 }
 
-void onGameMode(bool gameMode) {
-    if (!gameMode) {
-        homeScore->enable(false);
-        guestScore->enable(false);
-        homeExtra->enable(false);
-        guestExtra->enable(false);
-    }
-}
-
 void onStateChange() {
     wallDisplay->stateChange();
+    homeScore->stateChange();
+    guestScore->stateChange();
+    homeExtra->stateChange();
+    guestExtra->stateChange();
 }
 
 void onResetPeriod() {
@@ -121,7 +116,7 @@ void loopWallDisplay() {
 
 void setupControllers() {
     state->setOnUpdate(onStateChange);
-    gameTime->setup(onTimeUpdate, onGameMode, onResetPeriod, onLastTwoMinutes);
+    gameTime->setup(onTimeUpdate, onResetPeriod, onLastTwoMinutes);
     homeScore->setup(onHomeScoreUpdate);
     homeExtra->setup(onHomeFoulsUpdate, onHomeTimeoutsUpdate);
     guestScore->setup(onGuestScoreUpdate);
@@ -203,13 +198,16 @@ void adjustDecrease(bool repeat) {
 void setupButtons() {
     homeScoreButton.setup()
         .press([] {
-            if (undoButton.isPressed()) {
+            if (state->isGameMode()) {
                 beeper->click();
+            } else {
+                beeper->notAllowed();
+            }
+            if (undoButton.isPressed()) {
                 // adjustButtons.repeatDisable();
                 // homeScore->decreaseDelta();
                 homeScore->undo();
             } else {
-                beeper->click();
                 adjustButtons.repeatDisable(); 
                 homeScore->increaseDelta();
             }
@@ -224,13 +222,16 @@ void setupButtons() {
 
     guestScoreButton.setup()
         .press([] {
-            if (undoButton.isPressed()) {
+            if (state->isGameMode()) {
                 beeper->click();
+            } else {
+                beeper->notAllowed();
+            }
+            if (undoButton.isPressed()) {
                 // adjustButtons.repeatDisable();
                 // guestScore->decreaseDelta();
                 guestScore->undo();
             } else {
-                beeper->click();
                 adjustButtons.repeatDisable(); 
                 guestScore->increaseDelta();
             }
@@ -245,7 +246,11 @@ void setupButtons() {
 
     homeExtraButton.setup()
         .press([] {
-            beeper->click();
+            if (state->isGameMode()) {
+                beeper->click();
+            } else {
+                beeper->notAllowed();
+            }
         })
         .release([] {
             if (undoButton.isPressed()) {
@@ -264,7 +269,11 @@ void setupButtons() {
 
     guestExtraButton.setup()
         .press([] {
-            beeper->click();
+            if (state->isGameMode()) {
+                beeper->click();
+            } else {
+                beeper->notAllowed();
+            }
         })
         .release([] {
             if (undoButton.isPressed()) {

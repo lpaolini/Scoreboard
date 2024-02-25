@@ -79,6 +79,7 @@ class Extra {
         );
         void reset();
         void enable(bool enabled);
+        void stateChange();
         void resetPeriod();
         void increaseFouls();
         void decreaseFouls();

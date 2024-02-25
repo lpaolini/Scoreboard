@@ -67,6 +67,12 @@ void Extra::enable(bool enabled) {
     this->enabled = enabled;
 }
 
+void Extra::stateChange() {
+    if (!state->isGameMode()) {
+        enable(false);
+    }
+}
+
 void Extra::printTimeoutChar(uint8_t pos, bool show) {
     if (show) {
         display->setLed(displayIndex, pos, 3, true);
