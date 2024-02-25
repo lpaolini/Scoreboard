@@ -5,12 +5,14 @@ Extra::Extra(
     uint8_t displayIndex,
     uint8_t brightness,
     bool invert,
+    State *state,
     Beeper *beeper
 ) {
     this->display = display;
     this->displayIndex = displayIndex;
     this->brightness = brightness;
     this->invert = invert;
+    this->state = state;
     this->beeper = beeper;
 }
 
@@ -33,34 +35,36 @@ void Extra::reset() {
     resetTimeouts();
 }
 
-void Extra::setPeriod(uint8_t period) {
+void Extra::resetPeriod() {
     updating = false;
     inputTimer.stop();
     resetFouls();
-    if (period == 1 || period == 3 || period == 5 || period == 6) {
-        resetTimeouts();
+    switch (state->getPhase()) {
+        case PREPARATION:
+            resetTimeouts();
+        case REGULAR_TIME:
+            if (state->getPeriod() == 1 || state->getPeriod() == 3) {
+                resetTimeouts();
+            }
+            break;
+        case INTERVAL:
+            resetTimeouts();
+            break;
+        case EXTRA_TIME:
+            resetTimeouts();
+            break;
+        default:
+            break;
     }
-    maxTimeouts = getMaxTimeouts(period);
+    maxTimeouts = state->getMaxTimeouts();
     updateFoulsDisplay();
     updateTimeoutsDisplay();
-    enable();
+    enable(true);
 }
 
-uint8_t Extra::getMaxTimeouts(uint8_t period) {
-    if (period == 1 || period == 2) return 2;
-    if (period == 3 || period == 4) return 3;
-    if (period == 5) return 1;
-    return 0;
-}
-
-void Extra::enable() {
-    display->shutdown(displayIndex, false);
-    enabled = true;
-}
-
-void Extra::disable() {
-    display->shutdown(displayIndex, true);
-    enabled = false;
+void Extra::enable(bool enabled) {
+    display->shutdown(displayIndex, !enabled);
+    this->enabled = enabled;
 }
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {

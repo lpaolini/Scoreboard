@@ -6,6 +6,7 @@
 #include "constants.h"
 #include "Beeper.h"
 #include "Timer.h"
+#include "State.h"
 
 // Fouls
 
@@ -34,6 +35,7 @@ class Extra {
         uint8_t displayIndex;
         uint8_t brightness;
         bool invert;
+        State *state;
         Beeper *beeper;
 
         void (*onUpdateFouls)(uint8_t fouls) {};
@@ -54,7 +56,6 @@ class Extra {
         void printTimeoutChar(uint8_t pos, bool show);
         void resetFouls();
         void resetTimeouts();
-        uint8_t getMaxTimeouts(uint8_t period);
         void updateFouls(uint8_t fouls, bool force = false);
         void updateTimeouts(uint8_t timeouts, bool force = false);
         void updateFoulsDisplay(bool show = true);
@@ -69,6 +70,7 @@ class Extra {
             uint8_t displayIndex,
             uint8_t brightness,
             bool invert,
+            State *state,
             Beeper *beeper
         );
         void setup(
@@ -76,9 +78,8 @@ class Extra {
             void (*onUpdateTimeouts)(uint8_t timeouts)
         );
         void reset();
-        void enable();
-        void disable();
-        void setPeriod(uint8_t period);
+        void enable(bool enabled);
+        void resetPeriod();
         void increaseFouls();
         void decreaseFouls();
         void increaseTimeouts();

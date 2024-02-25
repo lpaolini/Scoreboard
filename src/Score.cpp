@@ -5,12 +5,14 @@ Score::Score(
     uint8_t displayIndex,
     uint8_t brightness,
     bool invert,
+    State *state,
     Beeper *beeper
 ) {
     this->display = display;
     this->displayIndex = displayIndex;
     this->brightness = brightness;
     this->invert = invert;
+    this->state = state;
     this->beeper = beeper;
 }
 
@@ -33,18 +35,13 @@ void Score::reset() {
     updateDelta(delta, false);
 }
 
-void Score::enable() {
-    display->shutdown(displayIndex, false);
-    enabled = true;
+void Score::enable(bool enabled) {
+    display->shutdown(displayIndex, !enabled);
+    this->enabled = enabled;
 }
 
-void Score::disable() {
-    display->shutdown(displayIndex, true);
-    enabled = false;
-}
-
-void Score::setPeriod(uint8_t period) {
-    enable();
+void Score::resetPeriod() {
+    enable(true);
 }
 
 void Score::startTimer() {

@@ -6,6 +6,7 @@
 #include "constants.h"
 #include "Beeper.h"
 #include "Timer.h"
+#include "State.h"
 
 // Score
 
@@ -34,6 +35,7 @@ class Score {
         uint8_t displayIndex;
         uint8_t brightness;
         bool invert;
+        State *state;
         Beeper *beeper;
 
         void (*onUpdate)(uint8_t score) {};
@@ -59,13 +61,13 @@ class Score {
             uint8_t displayIndex,
             uint8_t brightness,
             bool invert,
+            State *state,
             Beeper *beeper
         );
         void setup(void (*onUpdate)(uint8_t score));
         void reset();
-        void enable();
-        void disable();
-        void setPeriod(uint8_t period);
+        void enable(bool enabled);
+        void resetPeriod();
         void startTimer();
         void increaseDelta(bool roll = true);
         void decreaseDelta(bool roll = true);

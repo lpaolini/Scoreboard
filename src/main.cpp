@@ -33,13 +33,16 @@ Beeper *beeper = new Beeper(BUZZER_PIN);
 WallDisplay *wallDisplay = new ElvasDisplay(ELVAS_PIN, LED_PIN, state);
 LedControl *displayBus = new LedControl(SPI_DISPLAY_DATA_PIN, SPI_DISPLAY_CLK_PIN, SPI_DISPLAY_CS_PIN, 4);
 Adafruit_7segment *timeDisplay = new Adafruit_7segment();
-Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, beeper);
-Extra *guestExtra = new Extra(displayBus, 1, BRIGHTNESS, true, beeper);
-Score *homeScore = new Score(displayBus, 2, BRIGHTNESS, true, beeper);
-Score *guestScore = new Score(displayBus, 3, BRIGHTNESS, false, beeper);
+
+// controllers
+
+Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, state, beeper);
+Extra *guestExtra = new Extra(displayBus, 1, BRIGHTNESS, true, state, beeper);
+Score *homeScore = new Score(displayBus, 2, BRIGHTNESS, true, state, beeper);
+Score *guestScore = new Score(displayBus, 3, BRIGHTNESS, false, state, beeper);
 GameTime *gameTime = new GameTime(timeDisplay, TIME_DISPLAY_ADDR, BRIGHTNESS, state, beeper);
 
-// controls
+// buttons
 
 ScoreButton homeScoreButton(HOME_SCORE_BUTTON_PIN, 750);
 ScoreButton guestScoreButton(GUEST_SCORE_BUTTON_PIN, 750);
@@ -74,10 +77,10 @@ void onTimeUpdate(unsigned long time) {
 
 void onGameMode(bool gameMode) {
     if (!gameMode) {
-        homeScore->disable();
-        guestScore->disable();
-        homeExtra->disable();
-        guestExtra->disable();
+        homeScore->enable(false);
+        guestScore->enable(false);
+        homeExtra->enable(false);
+        guestExtra->enable(false);
     }
 }
 
@@ -85,11 +88,11 @@ void onStateChange() {
     wallDisplay->stateChange();
 }
 
-void onResetPeriod(uint8_t period) {
-    homeScore->setPeriod(period);
-    guestScore->setPeriod(period);
-    homeExtra->setPeriod(period);
-    guestExtra->setPeriod(period);
+void onResetPeriod() {
+    homeScore->resetPeriod();
+    guestScore->resetPeriod();
+    homeExtra->resetPeriod();
+    guestExtra->resetPeriod();
 }
 
 void onLastTwoMinutes() {
@@ -125,7 +128,7 @@ void setupControllers() {
     guestExtra->setup(onGuestFoulsUpdate, onGuestTimeoutsUpdate);
 }
 
-void setupBuzzer() {
+void setupBeeper() {
     beeper->setup();
 }
 
@@ -157,8 +160,15 @@ void softReset() {
 
 void reset() {
     if (undoButton.isPressed()) {
-        // hardReset();
-        softReset();
+        gameTime->enable(false);
+        homeScore->enable(false);
+        guestScore->enable(false);
+        homeExtra->enable(false);
+        guestExtra->enable(false);
+        beeper->confirm([] {
+            hardReset();
+            // softReset();
+        });
     } else {
         gameTime->resetPeriod(false);
     }
@@ -296,6 +306,13 @@ void setupButtons() {
         .pressHoldRepeat2([] {
             adjustDecrease(true);
         })
+        .pressBoth([](bool pressed) {
+            if (pressed && !gameTime->isRunning()) {
+                beeper->alert(true);
+            } else {
+                beeper->alert(false);
+            }
+        })
         .pressHoldBoth([] { 
             if (!gameTime->isRunning()) {
                 reset();
@@ -335,7 +352,7 @@ void setupTimer() {
 void setup() {
     Serial.begin(230400); 
     setupControllers();
-    setupBuzzer();
+    setupBeeper();
     setupButtons();
     setupWallDisplay();
     setupTimer();

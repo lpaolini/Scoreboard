@@ -24,7 +24,7 @@ class GameTime {
         Beeper *beeper;
 
         void (*onTimeUpdate)(unsigned long time) {};
-        void (*onResetPeriod)(uint8_t period) {};
+        void (*onResetPeriod)() {};
         void (*onGameMode)(bool gameMode) {};
         void (*onLastTwoMinutes)() {};
 
@@ -63,6 +63,7 @@ class GameTime {
         void loopStop();
         void loopSetTime();
         void loopSetStep();
+        void loopCountdown();
 
     public:
         GameTime(
@@ -75,11 +76,12 @@ class GameTime {
         void setup(
             void (*onTimeUpdate)(unsigned long time),
             void (*onGameMode)(bool gameMode),
-            void (*onResetPeriod)(uint8_t period),
+            void (*onResetPeriod)(),
             void (*onLastTwoMinutes)()
         );
         void reset();
         void resetPeriod(bool advancePeriod = false);
+        void enable(bool enabled);
         bool isRunning();
         bool isEndOfPeriod();
         void start();

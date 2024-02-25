@@ -17,7 +17,7 @@ GameTime::GameTime(
 void GameTime::setup( 
     void (*onTimeUpdate)(unsigned long time),
     void (*onGameMode)(bool gameMode),
-    void (*onResetPeriod)(uint8_t period),
+    void (*onResetPeriod)(),
     void (*onLastTwoMinutes)()
 ) {
     this->onTimeUpdate = onTimeUpdate;
@@ -55,7 +55,13 @@ void GameTime::resetPeriod(bool advancePeriod) {
         onGameMode(false);
         state->setMode(SET_STEP);
         time = preset[currentPreset];
+        beeper->confirm();
     }
+}
+
+void GameTime::enable(bool enabled) {
+    display->setDisplayState(enabled);
+    display->writeDisplay();
 }
 
 bool GameTime::isRunning() {
@@ -80,7 +86,7 @@ void GameTime::showTime() {
 
     showLastTwoMinutesAlert(time);
 
-    if ((state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME) && time <= 59900) {
+    if (time <= 59900 && state->isGamePeriod()) {
         showSecTenth(time);
     } else {
         showMinSec(time);
@@ -207,22 +213,7 @@ void GameTime::next() {
             setTime();
             break;
         case SET_TIME:
-            switch (state->getPhase()) {
-                case PREPARATION:
-                    onResetPeriod(0);
-                    break;
-                case REGULAR_TIME:
-                    onResetPeriod(state->getPeriod());
-                    break;
-                case INTERVAL:
-                    onResetPeriod(6);
-                    break;
-                case EXTRA_TIME:
-                    onResetPeriod(5);
-                    break;
-                default:
-                    break;
-            }
+            onResetPeriod();
             stop();
             break;
         case RUN:
@@ -395,7 +386,11 @@ void GameTime::setGuestScore(uint8_t guestScore) {
 
 void GameTime::loopStop() {
     bool show = (hold.isRunning() && !hold.isTriggered()) || (millis() - timeStop) / STOP_FLASH_DURATION_MS % 2;
-    display->setDisplayState(show);
+    if (show) {
+        showTime();
+    } else {
+        display->setDisplayState(false);
+    }
 }
 
 bool GameTime::isParity() {
