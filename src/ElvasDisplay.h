@@ -90,6 +90,8 @@ class ElvasDisplay : public WallDisplay {
         bool updateRequired = false;
         void copyState(void *dst, const void *src);
         void check();
+        void forceUpdate();
+        void setOutput(bool level);
         void setTimeMinSec(unsigned long time);
         void setTimeSecTenth(unsigned long time);
         void setUnknown1(bool value);
@@ -100,10 +102,8 @@ class ElvasDisplay : public WallDisplay {
         ElvasDisplay(uint8_t outputPin, uint8_t ledPin, State *state);
         void setup();
         void reset();
-        void setOutput(bool level);
         void update();
         void stateChange();
-        void forceUpdate();
         void setTime(unsigned long time);
         void setHomeScore(uint8_t score);
         void setGuestScore(uint8_t score);
