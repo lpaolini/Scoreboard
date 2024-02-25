@@ -30,17 +30,31 @@ void Beeper::lastTwoMinutes() {
     play(LAST_TWO_MINUTES);
 }
 
-void Beeper::confirm() {
-    play(CONFIRMATION);
+void Beeper::confirm(void (*callback)()) {
+    this->callback = callback;
+    play(CONFIRM);
 }
 
 void Beeper::notAllowed() {
     play(NOT_ALLOWED);
 }
 
-void Beeper::play(Tone *sequence) {
+void Beeper::alert(bool enable) {
+    if (enable) {
+        play(ALERT, true);
+    } else {
+        stop();
+    }
+}
+
+void Beeper::play(Tone *sequence, bool looped) {
     this->sequence = sequence;
+    this->looped = looped;
     step = 0;
+}
+
+void Beeper::stop() {
+    sequence = nullptr;
 }
 
 void Beeper::loop() {
@@ -48,9 +62,19 @@ void Beeper::loop() {
         if (step == 0 || (millis() - time > sequence[step - 1].duration)) {
             Tone t = sequence[step];
             if (t.frequency == 0 && t.duration == 0) {
-                sequence = nullptr;
+                if (looped) {
+                    step = 0;
+                } else {
+                    sequence = nullptr;
+                    if (callback != nullptr) {
+                        callback();
+                        callback = nullptr;
+                    }
+                }
             } else {
-                tone(pin, t.frequency, t.duration);
+                if (t.frequency) {
+                    tone(pin, t.frequency, t.duration);
+                }
                 time = millis();
                 step++;
             }
