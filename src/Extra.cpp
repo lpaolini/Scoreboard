@@ -43,8 +43,15 @@ void Extra::resetPeriod() {
         case PREPARATION:
             resetTimeouts();
         case REGULAR_TIME:
-            if (state->getPeriod() == 1 || state->getPeriod() == 3) {
-                resetTimeouts();
+            switch (state->getPeriod()) {
+                case 1:
+                    resetTimeouts();
+                    break;
+                case 3:
+                    resetTimeouts();
+                    break;
+                default:
+                    break;
             }
             break;
         case INTERVAL:
@@ -120,7 +127,24 @@ void Extra::updateTimeoutsDisplay(bool show) {
 }
 
 void Extra::resetFouls() {
-    updateFouls(0, true);
+    fouls = 0;
+    if (state->isStartOfGame()) {
+        prevFouls = 0;
+    }
+    inputTimer.stop(true);
+    foulsConfirmationTimer.stop();
+    updating = true;
+    updateFoulsDisplay();
+}
+
+void Extra::updateFouls(uint8_t fouls) {
+    if (enabled) {
+        this->fouls = fouls;
+        inputTimer.reset();
+        foulsConfirmationTimer.stop();
+        updating = true;
+        updateFoulsDisplay();
+    }
 }
 
 void Extra::increaseFouls() {
@@ -139,18 +163,21 @@ void Extra::decreaseFouls() {
     }
 }
 
-void Extra::updateFouls(uint8_t fouls, bool force) {
-    if (enabled || force) {
-        this-> fouls = fouls;
-        inputTimer.reset();
-        foulsConfirmationTimer.stop();
-        updating = true;
-        updateFoulsDisplay();
+void Extra::resetTimeouts() {
+    timeouts = 0;
+    if (state->isStartOfGame()) {
+        prevTimeouts = 0;
     }
+    timeoutsConfirmationTimer.stop();
+    updateTimeoutsDisplay();
 }
 
-void Extra::resetTimeouts() {
-    updateTimeouts(0, true);
+void Extra::updateTimeouts(uint8_t timeouts) {
+    if (enabled) {
+        this->timeouts = timeouts;
+        timeoutsConfirmationTimer.stop();
+        updateTimeoutsDisplay();
+    }
 }
 
 void Extra::increaseTimeouts() {
@@ -166,14 +193,6 @@ void Extra::decreaseTimeouts() {
         updateTimeouts(timeouts - 1);
     } else {
         beeper->notAllowed();
-    }
-}
-
-void Extra::updateTimeouts(uint8_t timeouts, bool force) {
-    if (enabled || force) {
-        this->timeouts = timeouts;
-        timeoutsConfirmationTimer.stop();
-        updateTimeoutsDisplay();
     }
 }
 

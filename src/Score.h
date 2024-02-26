@@ -50,8 +50,8 @@ class Score {
         Timer flashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
         int decimalDigit(int value, int digit);
         uint8_t limitScore(int16_t score);
-        void updateScore(bool show = true);
-        void updateDelta(int8_t delta, bool showIndicator = true);
+        void updateScoreDisplay(bool show = true);
+        void updateDeltaDisplay(int8_t delta, bool showIndicator = true);
         void loopInput();
         void loopFlash();
 

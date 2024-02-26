@@ -65,6 +65,10 @@ class State {
             return period;
         }
 
+        bool isStartOfGame() {
+            return phase == PREPARATION || (phase == REGULAR_TIME && period == 1);
+        }
+
         bool isGamePeriod() {
             return phase == REGULAR_TIME || phase == EXTRA_TIME;
         }

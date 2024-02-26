@@ -55,9 +55,9 @@ class Extra {
         int decimalDigit(int value, int digit);
         void printTimeoutChar(uint8_t pos, bool show);
         void resetFouls();
+        void updateFouls(uint8_t fouls);
         void resetTimeouts();
-        void updateFouls(uint8_t fouls, bool force = false);
-        void updateTimeouts(uint8_t timeouts, bool force = false);
+        void updateTimeouts(uint8_t timeouts);
         void updateFoulsDisplay(bool show = true);
         void updateTimeoutsDisplay(bool show = true);
         void loopInput();
