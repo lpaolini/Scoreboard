@@ -15,7 +15,7 @@ class Timer {
 
     public:
         explicit Timer(unsigned long duration, bool autoReset = true);
-        void stop();
+        void stop(bool trigger = false);
         void reset();
         void reset(unsigned long duration);
         bool isRunning();

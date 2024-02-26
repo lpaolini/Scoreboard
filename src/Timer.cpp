@@ -6,10 +6,10 @@ Timer::Timer(unsigned long duration, bool autoReset) {
     stop();
 }
 
-void Timer::stop() {
+void Timer::stop(bool trigger) {
     running = false;
     last = millis();
-    triggered = false;
+    triggered = trigger;
     expired = false;
 }
 
