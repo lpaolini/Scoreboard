@@ -73,7 +73,9 @@ void Beeper::loop() {
                 }
             } else {
                 if (t.frequency) {
-                    tone(pin, t.frequency, t.duration);
+                    #ifdef SOUND
+                        tone(pin, t.frequency, t.duration);
+                    #endif
                 }
                 time = millis();
                 step++;
