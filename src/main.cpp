@@ -302,22 +302,34 @@ void setupButtons() {
 
     adjustButtons.setup()
         .press1([] {
-            beeper->click();
-            adjustIncrease(false);
+            if (gameTime->isRunning()) {
+                beeper->notAllowed();
+            } else {
+                beeper->click();
+                adjustIncrease(false);
+            }
         })
         .pressHoldRepeat1([] {
             adjustIncrease(true);
         })
         .press2([] {
-            beeper->click();
-            adjustDecrease(false);
+            if (gameTime->isRunning()) {
+                beeper->notAllowed();
+            } else {
+                beeper->click();
+                adjustDecrease(false);
+            }
         })
         .pressHoldRepeat2([] {
             adjustDecrease(true);
         })
         .pressBoth([](bool pressed) {
-            if (pressed && !gameTime->isRunning()) {
-                beeper->alert(true);
+            if (pressed) {
+                if (gameTime->isRunning()) {
+                    beeper->notAllowed();
+                } else {
+                    beeper->alert(true);
+                }
             } else {
                 beeper->alert(false);
             }

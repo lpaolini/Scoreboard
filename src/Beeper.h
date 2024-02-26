@@ -34,7 +34,7 @@ class Beeper {
         Tone CLICK[2] = {{NOTE_C7, 25}, {0, 0}};
         Tone ALERT[3] = {{0, 500}, {NOTE_D6, 25}, {0, 0}};
         Tone TIME_START[2] = {{NOTE_C7, 100}, {0, 0}};
-        Tone TIME_STOP[4] = {{NOTE_C7, 50}, {0, 50}, {NOTE_C7, 50}, {0, 0}};
+        Tone TIME_STOP[4] = {{NOTE_C7, 50}, {0, 50}, {NOTE_C7, 100}, {0, 0}};
         Tone LAST_TWO_MINUTES[2] = {{NOTE_C7, 250}, {0, 0}};
         Tone CONFIRM[4] = {{NOTE_B6, 50}, {0, 25}, {NOTE_D7, 50}, {0, 0}};
         Tone NOT_ALLOWED[2] = {{NOTE_C6, 250}, {0, 0}};
