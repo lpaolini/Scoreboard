@@ -156,7 +156,9 @@ void Score::increaseScore() {
         prevDelta = 0;
         updateScoreDisplay();
         clearDelta();
-        onUpdate(score);
+        if (onUpdate != nullptr) {
+            onUpdate(score);
+        }
     }
 }
 
@@ -166,7 +168,9 @@ void Score::decreaseScore() {
         prevDelta = 0;
         updateScoreDisplay();
         clearDelta();
-        onUpdate(score);
+        if (onUpdate != nullptr) {
+            onUpdate(score);
+        }
     }
 }
 
@@ -183,7 +187,9 @@ void Score::loopInput() {
                 prevDelta = delta;
                 delta = 0;
                 updateScoreDisplay();
-                onUpdate(score);
+                if (onUpdate != nullptr) {
+                    onUpdate(score);
+                }
                 flashTimer.reset();
                 beeper->confirm();
             }

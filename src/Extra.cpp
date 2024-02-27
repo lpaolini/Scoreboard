@@ -135,6 +135,9 @@ void Extra::resetFouls() {
     foulsConfirmationTimer.stop();
     updating = true;
     updateFoulsDisplay();
+    if (onUpdateFouls != nullptr) {
+        onUpdateFouls(fouls);
+    }
 }
 
 void Extra::updateFouls(uint8_t fouls) {
@@ -170,6 +173,9 @@ void Extra::resetTimeouts() {
     }
     timeoutsConfirmationTimer.stop();
     updateTimeoutsDisplay();
+    if (onUpdateTimeouts != nullptr) {
+        onUpdateTimeouts(timeouts);
+    }
 }
 
 void Extra::updateTimeouts(uint8_t timeouts) {
