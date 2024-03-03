@@ -48,6 +48,7 @@ class Score {
         bool updating;
         Timer inputTimer = Timer(INPUT_TIMER_MS, false);
         Timer flashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
+        void enable(bool enabled);
         int decimalDigit(int value, int digit);
         uint8_t limitScore(int16_t score);
         void updateScoreDisplay(bool show = true);
@@ -66,7 +67,7 @@ class Score {
         );
         void setup(void (*onUpdate)(uint8_t score));
         void reset();
-        void enable(bool enabled);
+        bool isEnabled();
         void stateChange();
         void resetPeriod();
         void startTimer();

@@ -40,17 +40,18 @@ void Score::enable(bool enabled) {
     this->enabled = enabled;
 }
 
+bool Score::isEnabled() {
+    return enabled;
+}
+
 void Score::stateChange() {
-    if (!state->isGameMode()) {
-        enable(false);
-    }
+    enable(state->isGameMode());
 }
 
 void Score::resetPeriod() {
     if (state->isStartOfGame()) {
         reset();
     }
-    enable(true);
 }
 
 void Score::startTimer() {
@@ -79,6 +80,9 @@ void Score::updateScoreDisplay(bool show) {
         display->setChar(displayIndex, SCORE_POS[invert][2], ' ', false);
         display->setChar(displayIndex, SCORE_POS[invert][1], ' ', false);
         display->setChar(displayIndex, SCORE_POS[invert][0], ' ', false);
+    }
+    if (onUpdate != nullptr) {
+        onUpdate(score);
     }
 }
 
@@ -156,9 +160,6 @@ void Score::increaseScore() {
         prevDelta = 0;
         updateScoreDisplay();
         clearDelta();
-        if (onUpdate != nullptr) {
-            onUpdate(score);
-        }
     }
 }
 
@@ -168,9 +169,6 @@ void Score::decreaseScore() {
         prevDelta = 0;
         updateScoreDisplay();
         clearDelta();
-        if (onUpdate != nullptr) {
-            onUpdate(score);
-        }
     }
 }
 
@@ -187,9 +185,6 @@ void Score::loopInput() {
                 prevDelta = delta;
                 delta = 0;
                 updateScoreDisplay();
-                if (onUpdate != nullptr) {
-                    onUpdate(score);
-                }
                 flashTimer.reset();
                 beeper->confirm();
             }

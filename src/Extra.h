@@ -52,6 +52,7 @@ class Extra {
         Timer inputTimer = Timer(INPUT_TIMER_MS, false);
         Timer foulsConfirmationTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
         Timer timeoutsConfirmationTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
+        void enable(bool enabled);
         int decimalDigit(int value, int digit);
         void printTimeoutChar(uint8_t pos, bool show);
         void resetFouls();
@@ -78,7 +79,7 @@ class Extra {
             void (*onUpdateTimeouts)(uint8_t timeouts)
         );
         void reset();
-        void enable(bool enabled);
+        bool isEnabled();
         void stateChange();
         void resetPeriod();
         void increaseFouls();

@@ -155,11 +155,6 @@ void softReset() {
 
 void reset() {
     if (undoButton.isPressed()) {
-        gameTime->enable(false);
-        homeScore->enable(false);
-        guestScore->enable(false);
-        homeExtra->enable(false);
-        guestExtra->enable(false);
         beeper->confirm([] {
             hardReset();
             // softReset();
@@ -198,7 +193,7 @@ void adjustDecrease(bool repeat) {
 void setupButtons() {
     homeScoreButton.setup()
         .press([] {
-            if (state->isGameMode()) {
+            if (homeScore->isEnabled()) {
                 beeper->click();
             } else {
                 beeper->notAllowed();
@@ -222,7 +217,7 @@ void setupButtons() {
 
     guestScoreButton.setup()
         .press([] {
-            if (state->isGameMode()) {
+            if (guestScore->isEnabled()) {
                 beeper->click();
             } else {
                 beeper->notAllowed();
@@ -246,7 +241,7 @@ void setupButtons() {
 
     homeExtraButton.setup()
         .press([] {
-            if (state->isGameMode()) {
+            if (homeExtra->isEnabled()) {
                 beeper->click();
             } else {
                 beeper->notAllowed();
@@ -269,7 +264,7 @@ void setupButtons() {
 
     guestExtraButton.setup()
         .press([] {
-            if (state->isGameMode()) {
+            if (guestExtra->isEnabled()) {
                 beeper->click();
             } else {
                 beeper->notAllowed();

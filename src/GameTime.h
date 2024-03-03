@@ -58,6 +58,7 @@ class GameTime {
         void decreasePeriod();
         void decreaseTime();
         bool isParity();
+        void publishUpdate();
         void loopRun();
         void loopStop();
         void loopSetTime();
@@ -79,7 +80,6 @@ class GameTime {
         );
         void reset();
         void resetPeriod(bool advancePeriod = false);
-        void enable(bool enabled);
         bool isRunning();
         bool isEndOfPeriod();
         void start();

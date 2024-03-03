@@ -52,6 +52,7 @@ void GameTime::resetPeriod(bool advancePeriod) {
         }
         state->setMode(SET_STEP);
         time = preset[currentPreset];
+        publishUpdate();
         beeper->confirm();
     }
 }
@@ -89,13 +90,13 @@ void GameTime::showTime() {
         showMinSec(time);
     }
 
-    if ((state->getMode() == RUN || state->getMode() == STOP) && lastTime != time) {
+    if (state->isGameMode() && lastTime != time) {
         if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && lastTime > 120000 && time <= 120000) {
             onLastTwoMinutes();
         }
         lastTime = time;
-        onTimeUpdate(time);
     }
+    publishUpdate();
 }
 
 void GameTime::showMinSec(unsigned long time) {
@@ -379,6 +380,12 @@ void GameTime::setHomeScore(uint8_t homeScore) {
 
 void GameTime::setGuestScore(uint8_t guestScore) {
     this->guestScore = guestScore;
+}
+
+void GameTime::publishUpdate() {
+    if (onTimeUpdate != nullptr) {
+        onTimeUpdate(time);
+    }
 }
 
 void GameTime::loopStop() {

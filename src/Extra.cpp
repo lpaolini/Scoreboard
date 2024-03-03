@@ -66,7 +66,6 @@ void Extra::resetPeriod() {
     maxTimeouts = state->getMaxTimeouts();
     updateFoulsDisplay();
     updateTimeoutsDisplay();
-    enable(true);
 }
 
 void Extra::enable(bool enabled) {
@@ -74,10 +73,12 @@ void Extra::enable(bool enabled) {
     this->enabled = enabled;
 }
 
+bool Extra::isEnabled() {
+    return enabled;
+}
+
 void Extra::stateChange() {
-    if (!state->isGameMode()) {
-        enable(false);
-    }
+    enable(state->isGameMode() && (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME));
 }
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {
@@ -106,6 +107,9 @@ void Extra::updateFoulsDisplay(bool show) {
         display->setChar(displayIndex, FOULS_POS[invert][1], ' ', false);
         display->setChar(displayIndex, FOULS_POS[invert][0], ' ', false);
     }
+    if (onUpdateFouls != nullptr) {
+        onUpdateFouls(fouls);
+    }
 }
 
 void Extra::updateTimeoutsDisplay(bool show) {
@@ -123,6 +127,9 @@ void Extra::updateTimeoutsDisplay(bool show) {
         printTimeoutChar(TIMEOUTS_POS[invert][0], timeouts > 0);
     } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][0], ' ', false);
+    }
+    if (onUpdateTimeouts != nullptr) {
+        onUpdateTimeouts(timeouts);
     }
 }
 
@@ -173,9 +180,6 @@ void Extra::resetTimeouts() {
     }
     timeoutsConfirmationTimer.stop();
     updateTimeoutsDisplay();
-    if (onUpdateTimeouts != nullptr) {
-        onUpdateTimeouts(timeouts);
-    }
 }
 
 void Extra::updateTimeouts(uint8_t timeouts) {
@@ -223,9 +227,6 @@ void Extra::loopInput() {
         if (inputTimer.isTriggered()) {
             if (fouls != prevFouls) {
                 updateFoulsDisplay();
-                if (onUpdateFouls != nullptr) {
-                    onUpdateFouls(fouls);
-                }
                 foulsConfirmationTimer.reset();
                 prevFouls = fouls;
                 beeper->confirm();
@@ -235,9 +236,6 @@ void Extra::loopInput() {
     }
     if (timeouts != prevTimeouts) {
         updateTimeoutsDisplay();
-        if (onUpdateTimeouts != nullptr) {
-            onUpdateTimeouts(timeouts);
-        }
         prevTimeouts = timeouts;
         timeoutsConfirmationTimer.reset();
         beeper->confirm();
