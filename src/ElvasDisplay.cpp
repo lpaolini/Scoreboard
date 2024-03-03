@@ -24,28 +24,26 @@ void ElvasDisplay::reset() {
 }
 
 void ElvasDisplay::stateChange() {
-    switch (state->getMode()) {
-        case STOP:
-            timeDisplay = TIME;
-            if (state->getPhase() == REGULAR_TIME) {
-                showPeriod = true;
-                lastTimeStopped = millis();
-            } else {
-                showPeriod = false;
-            }
-            break;
-        case RUN:
-            timeDisplay = TIME;
+    if (state->isGameMode()) {
+        if (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME) {
+            showFouls = true;
+            showTimeouts = true;
+        } else {
+            showFouls = false;
+            showTimeouts = false;
+        }
+        timeDisplay = TIME;
+        if (state->getMode() == STOP && state->getPhase() == REGULAR_TIME) {
+            showPeriod = true;
+            lastTimeStopped = millis();
+        } else {
             showPeriod = false;
-            break;
-        case SET_STEP:
-            timeDisplay = OFF;
-            showPeriod = false;
-            break;
-        case SET_TIME:
-            timeDisplay = OFF;
-            showPeriod = false;
-            break;
+        }
+    } else {
+        showFouls = false;
+        showTimeouts = false;
+        timeDisplay = OFF;
+        showPeriod = false;
     }
 }
 
@@ -70,6 +68,13 @@ void ElvasDisplay::copyState(void *dst, const void *src) {
 
 void ElvasDisplay::check() {
     copyState(nextState.data, currentState.data);
+    alterTimeDisplay();
+    alterFoulsDisplay();
+    alterTimeoutDisplay();
+    updateRequired = memcmp(nextState.data, updateState.data, DATA_LENGTH * sizeof(uint8_t)) != 0;
+}
+
+void ElvasDisplay::alterTimeDisplay() {
     switch (timeDisplay) {
         case OFF:
             nextState.fields.time3 = DIGIT_OFF;
@@ -79,14 +84,31 @@ void ElvasDisplay::check() {
             break;
         case PERIOD:
             nextState.fields.time3 = DIGIT_OFF;
-            nextState.fields.time2 = state->getPeriod();
-            nextState.fields.time1 = DIGIT_OFF;
+            nextState.fields.time2 = DIGIT_OFF;
+            nextState.fields.time1 = state->getPeriod();
             nextState.fields.time0 = DIGIT_OFF;
             break;
         default:
             break;
     }
-    updateRequired = memcmp(nextState.data, updateState.data, DATA_LENGTH * sizeof(uint8_t)) != 0;
+}
+
+void ElvasDisplay::alterFoulsDisplay() {
+    if (!showFouls) {
+        nextState.fields.homeFouls1 = 0;
+        nextState.fields.homeFouls0 = DIGIT_OFF;
+        nextState.fields.guestFouls1 = 0;
+        nextState.fields.guestFouls0 = DIGIT_OFF;
+    }
+}
+
+void ElvasDisplay::alterTimeoutDisplay() {
+    if (!showTimeouts) {
+        nextState.fields.homeTimeouts = 0;
+        nextState.fields.homeService = 0;
+        nextState.fields.guestTimeouts = 0;
+        nextState.fields.guestService = 0;
+    }
 }
 
 void ElvasDisplay::forceUpdate() {
@@ -205,12 +227,12 @@ void ElvasDisplay::setGuestFouls(uint8_t fouls) {
 
 void ElvasDisplay::setHomeTimeouts(uint8_t timeouts) {
     currentState.fields.homeTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
-    currentState.fields.homeService = timeouts == 3 ? 1 : 0;
+    currentState.fields.homeService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
 }
 
 void ElvasDisplay::setGuestTimeouts(uint8_t timeouts) {
     currentState.fields.guestTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
-    currentState.fields.guestService = timeouts == 3 ? 1 : 0;
+    currentState.fields.guestService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
 }
 
 void ElvasDisplay::setBuzzer(bool buzzer) {
@@ -233,9 +255,13 @@ void ElvasDisplay::loopBuzzer() {
     }
 }
 
+void ElvasDisplay::loopTimeDisplay() {
+    if (showPeriod) {
+        timeDisplay = (millis() - lastTimeStopped) / 1000 % 4 >= 2 ? PERIOD : TIME;
+    }
+}
+
 void ElvasDisplay::loop() {
     loopBuzzer();
-    if (showPeriod) {
-        timeDisplay = (millis() - lastTimeStopped) / 1000 % 3 == 2 ? PERIOD : TIME;
-    }
+    loopTimeDisplay();
 }

@@ -81,6 +81,8 @@ class ElvasDisplay : public WallDisplay {
         uint8_t ledPin;
         Timer buzzer = Timer(BUZZER_DURATION_MS, false);
 
+        bool showFouls;
+        bool showTimeouts;
         enum TimeDisplay {TIME, PERIOD, OFF} timeDisplay;
         unsigned long lastTimeStopped;
         bool showPeriod;
@@ -90,6 +92,9 @@ class ElvasDisplay : public WallDisplay {
         bool updateRequired = false;
         void copyState(void *dst, const void *src);
         void check();
+        void alterTimeDisplay();
+        void alterFoulsDisplay();
+        void alterTimeoutDisplay();
         void forceUpdate();
         void setOutput(bool level);
         void setTimeMinSec(unsigned long time);
@@ -97,6 +102,7 @@ class ElvasDisplay : public WallDisplay {
         void setUnknown1(bool value);
         void setUnknown2(bool value);
         void loopBuzzer();
+        void loopTimeDisplay();
 
     public:
         ElvasDisplay(uint8_t outputPin, uint8_t ledPin, State *state);
