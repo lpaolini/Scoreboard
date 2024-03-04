@@ -2,6 +2,7 @@
 #define WallDisplay_h
 
 #include <Arduino.h>
+#include "Time.h"
 
 class WallDisplay {
     public:
@@ -9,7 +10,7 @@ class WallDisplay {
         virtual void reset();
         virtual void update();
         virtual void stateChange();
-        virtual void setTime(unsigned long time);
+        virtual void setTime(Time time, bool tenths);
         virtual void setHomeScore(uint8_t score);
         virtual void setGuestScore(uint8_t score);
         virtual void setHomeFouls(uint8_t fouls);

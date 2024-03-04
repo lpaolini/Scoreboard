@@ -6,6 +6,7 @@
 #include "Beeper.h"
 #include "Timer.h"
 #include "State.h"
+#include "Time.h"
 
 class GameTime {
     private:
@@ -14,8 +15,9 @@ class GameTime {
         const unsigned long preset[7] {3 * MIN, 5 * MIN, 8 * MIN, 10 * MIN, 12 * MIN, 15 * MIN, 20 * MIN};
         const uint8_t defaultPreset = 3;
         const uint8_t START_FLASH_BRIGHTNESS = 15;
-        const uint16_t START_FLASH_DURATION_MS = 100;
-        const uint16_t STOP_FLASH_DURATION_MS = 150;
+        const uint16_t START_FLASH_DURATION_MS = 125;
+        const uint16_t STOP_FLASH_DURATION_MS = 125;
+        const uint16_t RUN_COLON_FLASH_DURATION_MS = 250;
 
         Adafruit_7segment *display;
         uint8_t address;
@@ -23,7 +25,7 @@ class GameTime {
         State *state;
         Beeper *beeper;
 
-        void (*onTimeUpdate)(unsigned long time) {};
+        void (*onTimeUpdate)(Time time, bool tenths) {};
         void (*onResetPeriod)() {};
         void (*onLastTwoMinutes)() {};
 
@@ -32,21 +34,26 @@ class GameTime {
         uint8_t homeScore;
         uint8_t guestScore;
 
-        unsigned long lastTime;
         unsigned long time;
+        unsigned long adjustedTime;
         unsigned long timeStart;
         unsigned long timeStop;
+        bool tenths;
+
+        Time current;
+        Time last;
 
         Timer hold = Timer(1000, false);
         Timer startFlash = Timer(START_FLASH_DURATION_MS, false);
 
         void setBrightness(uint8_t brightness);
+        void enable(bool enabled);
         int decimalDigit(int value, int digit);
         uint8_t presetCount();
         void showTime();
-        void showMinSec(unsigned long time);
-        void showSecTenth(unsigned long time);
-        void showLastTwoMinutesAlert(unsigned long time);
+        void showMinSec();
+        void showSecTenth();
+        void showLastTwoMinutesAlert();
         void setTime();
         void showPeriod();
         void increaseRemainingTime();
@@ -58,7 +65,7 @@ class GameTime {
         void decreasePeriod();
         void decreaseTime();
         bool isParity();
-        void publishUpdate();
+        void publishTime();
         void loopRun();
         void loopStop();
         void loopSetTime();
@@ -74,7 +81,7 @@ class GameTime {
             Beeper *beeper
         );
         void setup(
-            void (*onTimeUpdate)(unsigned long time),
+            void (*onTimeUpdate)(Time time, bool tenths),
             void (*onResetPeriod)(),
             void (*onLastTwoMinutes)()
         );

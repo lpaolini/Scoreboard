@@ -14,36 +14,24 @@ void ElvasDisplay::setup() {
 }
 
 void ElvasDisplay::reset() {
+    noInterrupts();
     for (uint8_t i = 0; i < DATA_LENGTH; i++) {
         currentState.data[i] = 0;
     }
     nextBit = 0;
     setUnknown1(true);
     setUnknown2(true);
-    forceUpdate();
+    interrupts();
+    updateRequired = true;
 }
 
 void ElvasDisplay::stateChange() {
-    if (state->isGameMode()) {
-        if (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME) {
-            showFouls = true;
-            showTimeouts = true;
-        } else {
-            showFouls = false;
-            showTimeouts = false;
-        }
-        timeDisplay = TIME;
-        if (state->getMode() == STOP && state->getPhase() == REGULAR_TIME) {
-            showPeriod = true;
-            lastTimeStopped = millis();
-        } else {
-            showPeriod = false;
-        }
+    if (state->isGameMode() && (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME)) {
+        showFouls = true;
+        showTimeouts = true;
     } else {
         showFouls = false;
         showTimeouts = false;
-        timeDisplay = OFF;
-        showPeriod = false;
     }
 }
 
@@ -75,21 +63,18 @@ void ElvasDisplay::check() {
 }
 
 void ElvasDisplay::alterTimeDisplay() {
-    switch (timeDisplay) {
-        case OFF:
-            nextState.fields.time3 = DIGIT_OFF;
-            nextState.fields.time2 = DIGIT_OFF;
-            nextState.fields.time1 = DIGIT_OFF;
-            nextState.fields.time0 = DIGIT_OFF;
-            break;
-        case PERIOD:
+    if (state->isGameMode()) {
+        if (showPeriod) {
             nextState.fields.time3 = DIGIT_OFF;
             nextState.fields.time2 = DIGIT_OFF;
             nextState.fields.time1 = state->getPeriod();
             nextState.fields.time0 = DIGIT_OFF;
-            break;
-        default:
-            break;
+        }
+    } else {
+        nextState.fields.time3 = DIGIT_OFF;
+        nextState.fields.time2 = DIGIT_OFF;
+        nextState.fields.time1 = DIGIT_OFF;
+        nextState.fields.time0 = DIGIT_OFF;
     }
 }
 
@@ -111,10 +96,6 @@ void ElvasDisplay::alterTimeoutDisplay() {
     }
 }
 
-void ElvasDisplay::forceUpdate() {
-    updateRequired = true;
-}
-
 void ElvasDisplay::update() {
     if (updateRequired || nextBit != 0) {
         if (nextBit == 0) {
@@ -123,7 +104,7 @@ void ElvasDisplay::update() {
             updateRequired = false;
             digitalWrite(ledPin, true);
             #ifdef SERIAL_DEBUG
-                Serial.print("Elvas:");
+                Serial.print("\nElvas:");
             #endif
         }
 
@@ -153,7 +134,7 @@ void ElvasDisplay::update() {
             nextBit = 0;
             digitalWrite(ledPin, false);
             #ifdef SERIAL_DEBUG
-                Serial.println();
+                // Serial.println();
             #endif
         }
     } else {
@@ -161,38 +142,30 @@ void ElvasDisplay::update() {
     }
 }
 
-void ElvasDisplay::setTime(unsigned long time) {
-    if (time <= 59900 && state->isGamePeriod()) {
+void ElvasDisplay::setTime(Time time, bool tenths) {
+    if (tenths) {
         setTimeSecTenth(time);
     } else {
         setTimeMinSec(time);
     }
-}
-
-void ElvasDisplay::setTimeMinSec(unsigned long time) {
-    unsigned long adjustedTime = time + 999; // adjust for truncation to whole seconds
-    uint8_t min = adjustedTime / 60000;
-    uint8_t sec = adjustedTime % 60000 / 1000;
-    currentState.fields.time3 = decimalDigit(min, 1);
-    currentState.fields.time2 = decimalDigit(min, 0);
-    currentState.fields.time1 = decimalDigit(sec, 1);
-    currentState.fields.time0 = decimalDigit(sec, 0);
-}
-
-void ElvasDisplay::setTimeSecTenth(unsigned long time) {
-    unsigned long adjustedTime = time + 99; // adjust for truncation to tenths of seconds
-    uint8_t sec = adjustedTime % 60000 / 1000;
-    uint8_t tenth = adjustedTime % 1000 / 100;
-    currentState.fields.time3 = decimalDigit(sec, 1);
-    currentState.fields.time2 = decimalDigit(sec, 0);
-    currentState.fields.time1 = DIGIT_OFF; // off
-    currentState.fields.time0 = decimalDigit(tenth, 0);
-
-    if (sec == 0 && tenth == 0) {
-        setUnknown2(false);
-        setBuzzer(true);
-        buzzer.reset();
+    if (time.time == 0) {
+        buzzer(true);
     }
+    lastTimeChanged = millis();
+}
+
+void ElvasDisplay::setTimeMinSec(Time time) {
+    currentState.fields.time3 = decimalDigit(time.fields.min, 1);
+    currentState.fields.time2 = decimalDigit(time.fields.min, 0);
+    currentState.fields.time1 = decimalDigit(time.fields.sec, 1);
+    currentState.fields.time0 = decimalDigit(time.fields.sec, 0);
+}
+
+void ElvasDisplay::setTimeSecTenth(Time time) {
+    currentState.fields.time3 = decimalDigit(time.fields.sec, 1);
+    currentState.fields.time2 = decimalDigit(time.fields.sec, 0);
+    currentState.fields.time1 = DIGIT_OFF; // off
+    currentState.fields.time0 = decimalDigit(time.fields.tenth, 0);
 }
 
 void ElvasDisplay::setHomeScore(uint8_t score) {
@@ -247,17 +220,33 @@ void ElvasDisplay::setUnknown2(bool value) {
     currentState.fields.unknown2 = value;
 }
 
-void ElvasDisplay::loopBuzzer() {
-    buzzer.loop();
-    if (buzzer.isTriggered()) {
+void ElvasDisplay::buzzer(bool enabled) {
+    if (enabled) {
+        setUnknown2(false);
+        setBuzzer(true);
+        buzzerTimer.reset();
+    } else {
         setBuzzer(false);
         setUnknown2(true);
+        buzzerTimer.stop();
+    }
+}
+
+void ElvasDisplay::loopBuzzer() {
+    buzzerTimer.loop();
+    if (buzzerTimer.isTriggered()) {
+        buzzer(false);
     }
 }
 
 void ElvasDisplay::loopTimeDisplay() {
-    if (showPeriod) {
-        timeDisplay = (millis() - lastTimeStopped) / 1000 % 4 >= 2 ? PERIOD : TIME;
+    if (state->isGameMode()) {
+        unsigned long delta = millis() - lastTimeChanged;
+        if (delta > 2000) {
+            showPeriod = delta / 2000 % 2 == 0;
+        } else {
+            showPeriod = false;
+        }
     }
 }
 

@@ -15,7 +15,7 @@ GameTime::GameTime(
 }
 
 void GameTime::setup( 
-    void (*onTimeUpdate)(unsigned long time),
+    void (*onTimeUpdate)(Time time, bool tenths),
     void (*onResetPeriod)(),
     void (*onLastTwoMinutes)()
 ) {
@@ -52,7 +52,8 @@ void GameTime::resetPeriod(bool advancePeriod) {
         }
         state->setMode(SET_STEP);
         time = preset[currentPreset];
-        publishUpdate();
+        last.time = 0;
+        publishTime();
         beeper->confirm();
     }
 }
@@ -67,7 +68,7 @@ bool GameTime::isRunning() {
 }
 
 bool GameTime::isEndOfPeriod() {
-    return state->getMode() == STOP && time == 0;
+    return state->getMode() == STOP && current.time == 0;
 }
 
 int GameTime::decimalDigit(int value, int digit) {
@@ -82,54 +83,59 @@ int GameTime::decimalDigit(int value, int digit) {
 void GameTime::showTime() {
     display->setDisplayState(true);
 
-    showLastTwoMinutesAlert(time);
+    showLastTwoMinutesAlert();
 
     if (time <= 59900 && state->isGamePeriod()) {
-        showSecTenth(time);
+        adjustedTime = time + 99; // adjust for truncation to tenths of seconds
+        current.fields.min = 0;
+        current.fields.sec = adjustedTime / 1000;
+        current.fields.tenth = adjustedTime % 1000 / 100;
+        tenths = true;
+        showSecTenth();
     } else {
-        showMinSec(time);
+        adjustedTime = time + 999; // adjust for truncation to whole seconds
+        current.fields.min = adjustedTime / 60000;
+        current.fields.sec = adjustedTime % 60000 / 1000;
+        current.fields.tenth = 0;
+        tenths = false;
+        showMinSec();
     }
 
-    if (state->isGameMode() && lastTime != time) {
-        if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && lastTime > 120000 && time <= 120000) {
-            onLastTwoMinutes();
+    if (state->isGameMode() && (last.time != current.time)) {
+        if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4) {
+            if (current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
+                onLastTwoMinutes();
+            }
         }
-        lastTime = time;
+        last.time = current.time;
+        publishTime();
     }
-    publishUpdate();
 }
 
-void GameTime::showMinSec(unsigned long time) {
-    unsigned long adjustedTime = time + 999; // adjust for truncation to whole seconds
-    uint8_t min = adjustedTime / 60000;
-    uint8_t sec = adjustedTime % 60000 / 1000;
-    if (min >= 10) {
-        display->writeDigitNum(0, decimalDigit(min, 1), false);
+void GameTime::showMinSec() {
+    if (current.fields.min >= 10) {
+        display->writeDigitNum(0, decimalDigit(current.fields.min, 1), false);
     }
-    display->writeDigitNum(1, decimalDigit(min, 0), false);
-    display->writeDigitNum(3, decimalDigit(sec, 1), false);
-    display->writeDigitNum(4, decimalDigit(sec, 0), false);
-    display->drawColon(state->getMode() == RUN ? (time) / 150 % 2 : true);
+    display->writeDigitNum(1, decimalDigit(current.fields.min, 0), false);
+    display->writeDigitNum(3, decimalDigit(current.fields.sec, 1), false);
+    display->writeDigitNum(4, decimalDigit(current.fields.sec, 0), false);
+    display->drawColon(state->getMode() == RUN ? (time) / RUN_COLON_FLASH_DURATION_MS % 2 : true);
     display->writeDisplay();
 }
 
-void GameTime::showSecTenth(unsigned long time) {
-    unsigned long adjustedTime = time + 99; // adjust for truncation to tenths of seconds
-    uint8_t sec = adjustedTime / 1000;
-    uint8_t tenth = adjustedTime % 1000 / 100;
-
-    if (sec < 10) {
+void GameTime::showSecTenth() {
+    if (current.fields.sec < 10) {
         display->writeDigitAscii(1, ' ', false);
     } else {
-        display->writeDigitNum(1, decimalDigit(sec, 1), false);
+        display->writeDigitNum(1, decimalDigit(current.fields.sec, 1), false);
     }
-    display->writeDigitNum(3, decimalDigit(sec, 0), true);
-    display->writeDigitNum(4, decimalDigit(tenth, 0), false);
+    display->writeDigitNum(3, decimalDigit(current.fields.sec, 0), true);
+    display->writeDigitNum(4, decimalDigit(current.fields.tenth, 0), false);
     display->drawColon(false);
     display->writeDisplay();
 }
 
-void GameTime::showLastTwoMinutesAlert(unsigned long time) {
+void GameTime::showLastTwoMinutesAlert() {
     if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && time <= 120000 && time / 250 % 2) {
         display->writeDigitRaw(0, 0b01001001);
     } else {
@@ -382,9 +388,9 @@ void GameTime::setGuestScore(uint8_t guestScore) {
     this->guestScore = guestScore;
 }
 
-void GameTime::publishUpdate() {
+void GameTime::publishTime() {
     if (onTimeUpdate != nullptr) {
-        onTimeUpdate(time);
+        onTimeUpdate(current, tenths);
     }
 }
 
@@ -398,7 +404,7 @@ void GameTime::loopStop() {
 }
 
 bool GameTime::isParity() {
-    return homeScore > 0 && guestScore > 0 && homeScore == guestScore;
+    return homeScore == guestScore;
 }
 
 void GameTime::loopRun() {
@@ -424,7 +430,7 @@ void GameTime::loopSetStep() {
 void GameTime::loop() {
     hold.loop();
     startFlash.loop();
-    if (startFlash.isExpired()) {
+    if (startFlash.isTriggered()) {
         setBrightness(brightness);
     }
     switch (state->getMode()) {

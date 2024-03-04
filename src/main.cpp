@@ -7,6 +7,7 @@
 #include "constants.h"
 
 #include "State.h"
+#include "Time.h"
 #include "Beeper.h"
 
 #include "ElvasDisplay.h"
@@ -71,8 +72,8 @@ void onGuestTimeoutsUpdate(uint8_t timeouts) {
     wallDisplay->setGuestTimeouts(timeouts);
 }
 
-void onTimeUpdate(unsigned long time) {
-    wallDisplay->setTime(time);
+void onTimeUpdate(Time time, bool tenths) {
+    wallDisplay->setTime(time, tenths);
 }
 
 void onStateChange() {
@@ -155,9 +156,10 @@ void softReset() {
 
 void reset() {
     if (undoButton.isPressed()) {
+        Serial.println("\nReset");
         beeper->confirm([] {
-            hardReset();
-            // softReset();
+            // hardReset();
+            softReset();
         });
     } else {
         gameTime->resetPeriod(false);
