@@ -2,7 +2,7 @@
 #define constants_h
 
 // #define SERIAL_DEBUG
-#define SOUND true
+#define SOUND
 
 // Wall panel
 

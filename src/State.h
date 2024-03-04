@@ -70,7 +70,7 @@ class State {
         }
 
         bool isGamePeriod() {
-            return phase == REGULAR_TIME || phase == EXTRA_TIME;
+            return isGameMode() && (phase == REGULAR_TIME || phase == EXTRA_TIME);
         }
 
         bool isGameMode() {

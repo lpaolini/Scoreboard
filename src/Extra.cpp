@@ -38,26 +38,34 @@ void Extra::reset() {
 void Extra::resetPeriod() {
     updating = false;
     inputTimer.stop();
-    resetFouls();
     switch (state->getPhase()) {
         case PREPARATION:
+            resetFouls();
             resetTimeouts();
         case REGULAR_TIME:
             switch (state->getPeriod()) {
                 case 1:
+                    resetFouls();
                     resetTimeouts();
                     break;
+                case 2:
+                    resetFouls();
+                    break;
                 case 3:
+                    resetFouls();
                     resetTimeouts();
+                    break;
+                case 4:
+                    resetFouls();
                     break;
                 default:
                     break;
             }
             break;
         case INTERVAL:
-            resetTimeouts();
             break;
         case EXTRA_TIME:
+            resetFouls();
             resetTimeouts();
             break;
         default:

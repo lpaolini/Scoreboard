@@ -156,10 +156,9 @@ void softReset() {
 
 void reset() {
     if (undoButton.isPressed()) {
-        Serial.println("\nReset");
         beeper->confirm([] {
-            // hardReset();
-            softReset();
+            hardReset();
+            // softReset();
         });
     } else {
         gameTime->resetPeriod(false);
@@ -173,7 +172,7 @@ void adjustIncrease(bool repeat) {
         } 
         if (guestScoreButton.isPressed()) {
             guestScore->increaseScore();
-        } 
+        }
     } else {
         gameTime->increase();
     }
@@ -186,7 +185,7 @@ void adjustDecrease(bool repeat) {
         } 
         if (guestScoreButton.isPressed()) {
             guestScore->decreaseScore();
-        } 
+        }
     } else {
         gameTime->decrease();
     }
@@ -299,23 +298,15 @@ void setupButtons() {
 
     adjustButtons.setup()
         .press1([] {
-            if (gameTime->isRunning()) {
-                beeper->notAllowed();
-            } else {
-                beeper->click();
-                adjustIncrease(false);
-            }
+            beeper->click();
+            adjustIncrease(false);
         })
         .pressHoldRepeat1([] {
             adjustIncrease(true);
         })
         .press2([] {
-            if (gameTime->isRunning()) {
-                beeper->notAllowed();
-            } else {
-                beeper->click();
-                adjustDecrease(false);
-            }
+            beeper->click();
+            adjustDecrease(false);
         })
         .pressHoldRepeat2([] {
             adjustDecrease(true);

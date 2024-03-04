@@ -53,7 +53,7 @@ void GameTime::resetPeriod(bool advancePeriod) {
         state->setMode(SET_STEP);
         time = preset[currentPreset];
         last.time = 0;
-        publishTime();
+        showTime();
         beeper->confirm();
     }
 }
@@ -83,8 +83,6 @@ int GameTime::decimalDigit(int value, int digit) {
 void GameTime::showTime() {
     display->setDisplayState(true);
 
-    showLastTwoMinutesAlert();
-
     if (time <= 59900 && state->isGamePeriod()) {
         adjustedTime = time + 99; // adjust for truncation to tenths of seconds
         current.fields.min = 0;
@@ -101,7 +99,9 @@ void GameTime::showTime() {
         showMinSec();
     }
 
-    if (state->isGameMode() && (last.time != current.time)) {
+    showLastTwoMinutesAlert();
+
+    if (last.time != current.time) {
         if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4) {
             if (current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
                 onLastTwoMinutes();
@@ -115,6 +115,8 @@ void GameTime::showTime() {
 void GameTime::showMinSec() {
     if (current.fields.min >= 10) {
         display->writeDigitNum(0, decimalDigit(current.fields.min, 1), false);
+    } else {
+        showLastTwoMinutesAlert();
     }
     display->writeDigitNum(1, decimalDigit(current.fields.min, 0), false);
     display->writeDigitNum(3, decimalDigit(current.fields.sec, 1), false);
@@ -124,6 +126,7 @@ void GameTime::showMinSec() {
 }
 
 void GameTime::showSecTenth() {
+    showLastTwoMinutesAlert();
     if (current.fields.sec < 10) {
         display->writeDigitAscii(1, ' ', false);
     } else {
@@ -139,7 +142,7 @@ void GameTime::showLastTwoMinutesAlert() {
     if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && time <= 120000 && time / 250 % 2) {
         display->writeDigitRaw(0, 0b01001001);
     } else {
-        display->writeDigitRaw(0, 0b00000000);
+        display->writeDigitAscii(0, ' ', false);
     }
 }
 

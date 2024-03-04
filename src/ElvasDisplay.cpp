@@ -14,15 +14,14 @@ void ElvasDisplay::setup() {
 }
 
 void ElvasDisplay::reset() {
-    noInterrupts();
     for (uint8_t i = 0; i < DATA_LENGTH; i++) {
         currentState.data[i] = 0;
     }
     nextBit = 0;
     setUnknown1(true);
     setUnknown2(true);
-    interrupts();
-    updateRequired = true;
+    showPeriod = false;
+    check();
 }
 
 void ElvasDisplay::stateChange() {
@@ -33,6 +32,7 @@ void ElvasDisplay::stateChange() {
         showFouls = false;
         showTimeouts = false;
     }
+    lastTimeChanged = millis();
 }
 
 int ElvasDisplay::decimalDigit(int value, int digit) {
@@ -240,7 +240,7 @@ void ElvasDisplay::loopBuzzer() {
 }
 
 void ElvasDisplay::loopTimeDisplay() {
-    if (state->isGameMode()) {
+    if (state->isGameMode() && state->getPhase() == REGULAR_TIME) {
         unsigned long delta = millis() - lastTimeChanged;
         if (delta > 2000) {
             showPeriod = delta / 2000 % 2 == 0;
