@@ -33,6 +33,7 @@ void Score::reset() {
     flashTimer.stop();
     updateScoreDisplay();
     updateDeltaDisplay(delta, false);
+    publishScore();
 }
 
 void Score::enable(bool enabled) {
@@ -81,9 +82,6 @@ void Score::updateScoreDisplay(bool show) {
         display->setChar(displayIndex, SCORE_POS[invert][1], ' ', false);
         display->setChar(displayIndex, SCORE_POS[invert][0], ' ', false);
     }
-    if (onUpdate != nullptr) {
-        onUpdate(score);
-    }
 }
 
 void Score::updateDeltaDisplay(int8_t delta, bool showIndicator) {
@@ -99,6 +97,12 @@ void Score::updateDeltaDisplay(int8_t delta, bool showIndicator) {
         }
     }
     display->setChar(displayIndex, DELTA_POS[invert][2], delta < 0 ? '-' : ' ', false);
+}
+
+void Score::publishScore() {
+    if (onUpdate != nullptr) {
+        onUpdate(score);
+    }
 }
 
 void Score::clearDelta() {
@@ -160,6 +164,7 @@ void Score::increaseScore() {
         prevDelta = 0;
         updateScoreDisplay();
         clearDelta();
+        publishScore();
     }
 }
 
@@ -169,6 +174,7 @@ void Score::decreaseScore() {
         prevDelta = 0;
         updateScoreDisplay();
         clearDelta();
+        publishScore();
     }
 }
 
@@ -185,6 +191,7 @@ void Score::loopInput() {
                 prevDelta = delta;
                 delta = 0;
                 updateScoreDisplay();
+                publishScore();
                 flashTimer.reset();
                 beeper->confirm();
             }

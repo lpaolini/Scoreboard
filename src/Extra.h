@@ -60,7 +60,9 @@ class Extra {
         void resetTimeouts();
         void updateTimeouts(uint8_t timeouts);
         void updateFoulsDisplay(bool show = true);
+        void publishFouls();
         void updateTimeoutsDisplay(bool show = true);
+        void publishTimeouts();
         void loopInput();
         void loopFoulsConfirmation();
         void loopTimeoutsConfirmation();

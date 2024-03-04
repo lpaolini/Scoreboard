@@ -107,6 +107,9 @@ void Extra::updateFoulsDisplay(bool show) {
         display->setChar(displayIndex, FOULS_POS[invert][1], ' ', false);
         display->setChar(displayIndex, FOULS_POS[invert][0], ' ', false);
     }
+}
+
+void Extra::publishFouls() {
     if (onUpdateFouls != nullptr) {
         onUpdateFouls(fouls);
     }
@@ -128,6 +131,9 @@ void Extra::updateTimeoutsDisplay(bool show) {
     } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][0], ' ', false);
     }
+}
+
+void Extra::publishTimeouts() {
     if (onUpdateTimeouts != nullptr) {
         onUpdateTimeouts(timeouts);
     }
@@ -142,9 +148,7 @@ void Extra::resetFouls() {
     foulsConfirmationTimer.stop();
     updating = true;
     updateFoulsDisplay();
-    if (onUpdateFouls != nullptr) {
-        onUpdateFouls(fouls);
-    }
+    publishFouls();
 }
 
 void Extra::updateFouls(uint8_t fouls) {
@@ -180,6 +184,7 @@ void Extra::resetTimeouts() {
     }
     timeoutsConfirmationTimer.stop();
     updateTimeoutsDisplay();
+    publishTimeouts();
 }
 
 void Extra::updateTimeouts(uint8_t timeouts) {
@@ -227,6 +232,7 @@ void Extra::loopInput() {
         if (inputTimer.isTriggered()) {
             if (fouls != prevFouls) {
                 updateFoulsDisplay();
+                publishFouls();
                 foulsConfirmationTimer.reset();
                 prevFouls = fouls;
                 beeper->confirm();
@@ -236,6 +242,7 @@ void Extra::loopInput() {
     }
     if (timeouts != prevTimeouts) {
         updateTimeoutsDisplay();
+        publishTimeouts();
         prevTimeouts = timeouts;
         timeoutsConfirmationTimer.reset();
         beeper->confirm();

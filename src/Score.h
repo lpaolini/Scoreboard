@@ -53,6 +53,7 @@ class Score {
         uint8_t limitScore(int16_t score);
         void updateScoreDisplay(bool show = true);
         void updateDeltaDisplay(int8_t delta, bool showIndicator = true);
+        void publishScore();
         void loopInput();
         void loopFlash();
 
