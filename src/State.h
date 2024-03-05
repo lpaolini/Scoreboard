@@ -3,22 +3,30 @@
 
 #include <Arduino.h>
 
-enum Mode {STOP, RUN, SET_STEP, SET_TIME};
+enum Mode {RESET, SET_STEP, SET_TIME, GAME};
 enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME, END_OF_GAME};
-
-// enum Time {STOP, RUN}
-// enum Mode {SET_STEP, SET_TIME, GAME};
-// enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME, END_OF_GAME};
+enum Chrono {STOP, RUN};
 
 class State {
     private:
         void (*onUpdate)() = nullptr;
 
-        Mode mode = SET_STEP;
+        Mode mode = RESET;
         Phase phase = REGULAR_TIME;
+        Chrono chrono = STOP;
         uint8_t period = 1;
 
         void update() {
+            #ifdef STATE_DEBUG
+                Serial.print(F("\nState: mode = "));
+                Serial.print(mode);
+                Serial.print(F(", phase = "));
+                Serial.print(phase);
+                Serial.print(F(", chrono = "));
+                Serial.print(chrono);
+                Serial.print(F(", period = "));
+                Serial.print(period);
+            #endif
             if (onUpdate != nullptr) {
                 onUpdate();
             }
@@ -27,20 +35,23 @@ class State {
     public:
         State() {};
 
-        void setOnUpdate(void (*onUpdate)()) {
+        void setup(void (*onUpdate)()) {
             this->onUpdate = onUpdate;
         }
 
-        void set(Mode mode, Phase phase, uint8_t period) {
-            this->mode = mode;
-            this->phase = phase;
-            this->period = period;
+        void reset() {
+            Mode mode = SET_STEP;
+            Phase phase = REGULAR_TIME;
+            Chrono chrono = STOP;
+            uint8_t period = 1;
             update();
         }
-
+ 
         void setMode(Mode mode) {
-            this->mode = mode;
-            update();
+            if (this->mode != mode) {
+                this->mode = mode;
+                update();
+            }
         }
 
         Mode getMode() {
@@ -48,21 +59,36 @@ class State {
         }
 
         void setPhase(Phase phase) {
-            this->phase = phase;
-            update();
+            if (this->phase != phase) {
+                this->phase = phase;
+                update();
+            }
         }
 
         Phase getPhase() {
             return phase;
         }
 
+        void setChrono(Chrono chrono) {
+            if (this->chrono != chrono) {
+                this->chrono = chrono;
+                update();
+            }
+        }
+
+        Chrono getChrono() {
+            return chrono;
+        }
+
         void setPeriod(uint8_t period) {
-            this->period = period;
-            update();
+            if (this->period != period) {
+                this->period = period;
+                update();
+            }
         }
 
         uint8_t getPeriod() {
-            return period;
+            return phase == REGULAR_TIME ? period : 0;
         }
 
         bool isStartOfGame() {
@@ -74,7 +100,15 @@ class State {
         }
 
         bool isGameMode() {
-            return mode == RUN || mode == STOP;
+            return mode == GAME;
+        }
+
+        bool isFourthPeriod() {
+            return mode == GAME && (phase == REGULAR_TIME && period == 4) && chrono == RUN;
+        }
+
+        bool isFourthPeriodOrOvertime() {
+            return mode == GAME && ((phase == REGULAR_TIME && period == 4) || phase == EXTRA_TIME) && chrono == RUN;
         }
 
         uint8_t getMaxTimeouts() {

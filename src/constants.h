@@ -1,7 +1,8 @@
 #ifndef constants_h
 #define constants_h
 
-// #define SERIAL_DEBUG
+// #define ELVAS_DEBUG
+// #define STATE_DEBUG
 #define SOUND
 
 // Wall panel

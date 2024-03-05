@@ -16,7 +16,7 @@ class GameTime {
         const uint8_t defaultPreset = 3;
         const uint8_t START_FLASH_BRIGHTNESS = 15;
         const uint16_t START_FLASH_DURATION_MS = 125;
-        const uint16_t STOP_FLASH_DURATION_MS = 125;
+        const uint16_t STOP_FLASH_DURATION_MS = 250;
         const uint16_t RUN_COLON_FLASH_DURATION_MS = 250;
 
         Adafruit_7segment *display;
@@ -68,6 +68,7 @@ class GameTime {
         void publishTime();
         void loopRun();
         void loopStop();
+        void loopGame();
         void loopSetTime();
         void loopSetStep();
         void loopCountdown();
@@ -87,7 +88,7 @@ class GameTime {
         );
         void reset();
         void resetPeriod(bool advancePeriod = false);
-        bool isRunning();
+        void stateChange();
         bool isEndOfPeriod();
         void start();
         void stop();

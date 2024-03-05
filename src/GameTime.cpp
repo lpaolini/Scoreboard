@@ -24,7 +24,7 @@ void GameTime::setup(
     this->onLastTwoMinutes = onLastTwoMinutes;
     display->begin(address);
     setBrightness(brightness);
-    reset();
+    enable(false);
 }
 
 void GameTime::setBrightness(uint8_t brightness) {
@@ -36,9 +36,7 @@ uint8_t GameTime::presetCount() {
 }
 
 void GameTime::reset() {
-    state->setMode(SET_STEP);
-    state->setPhase(REGULAR_TIME);
-    state->setPeriod(1);
+    state->reset();
     homeScore = 0;
     guestScore = 0;
     currentPreset = defaultPreset;
@@ -53,9 +51,12 @@ void GameTime::resetPeriod(bool advancePeriod) {
         state->setMode(SET_STEP);
         time = preset[currentPreset];
         last.time = 0;
-        showTime();
         beeper->confirm();
     }
+}
+
+void GameTime::stateChange() {
+    enable(state->getMode() != RESET);
 }
 
 void GameTime::enable(bool enabled) {
@@ -63,12 +64,8 @@ void GameTime::enable(bool enabled) {
     display->writeDisplay();
 }
 
-bool GameTime::isRunning() {
-    return state->getMode() == RUN;
-}
-
 bool GameTime::isEndOfPeriod() {
-    return state->getMode() == STOP && current.time == 0;
+    return state->getMode() == GAME && state->getChrono() == STOP && current.time == 0;
 }
 
 int GameTime::decimalDigit(int value, int digit) {
@@ -99,12 +96,13 @@ void GameTime::showTime() {
         showMinSec();
     }
 
-    showLastTwoMinutesAlert();
-
     if (last.time != current.time) {
-        if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4) {
-            if (current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
+        if (current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
+            if (state->isFourthPeriod()) {
                 onLastTwoMinutes();
+            }
+            if (state->isFourthPeriodOrOvertime()) {
+                beeper->confirm();
             }
         }
         last.time = current.time;
@@ -121,7 +119,7 @@ void GameTime::showMinSec() {
     display->writeDigitNum(1, decimalDigit(current.fields.min, 0), false);
     display->writeDigitNum(3, decimalDigit(current.fields.sec, 1), false);
     display->writeDigitNum(4, decimalDigit(current.fields.sec, 0), false);
-    display->drawColon(state->getMode() == RUN ? (time) / RUN_COLON_FLASH_DURATION_MS % 2 : true);
+    display->drawColon(state->getChrono() == RUN ? (time) / RUN_COLON_FLASH_DURATION_MS % 2 : true);
     display->writeDisplay();
 }
 
@@ -139,7 +137,7 @@ void GameTime::showSecTenth() {
 }
 
 void GameTime::showLastTwoMinutesAlert() {
-    if (state->getMode() == RUN && state->getPhase() == REGULAR_TIME && state->getPeriod() == 4 && time <= 120000 && time / 250 % 2) {
+    if (state->isFourthPeriodOrOvertime() && time <= 120000 && time / 250 % 2) {
         display->writeDigitRaw(0, 0b01001001);
     } else {
         display->writeDigitAscii(0, ' ', false);
@@ -198,7 +196,7 @@ void GameTime::start() {
     if (time == 0) {
         resetPeriod(true);
     } else {
-        state->setMode(RUN);
+        state->setChrono(RUN);
         this->timeStart = millis();
         showTime();
         setBrightness(START_FLASH_BRIGHTNESS);
@@ -208,7 +206,8 @@ void GameTime::start() {
 }
 
 void GameTime::stop() {
-    state->setMode(STOP);
+    state->setMode(GAME);
+    state->setChrono(STOP);
     this->timeStop = millis();
     showTime();
     beeper->timeStop();
@@ -223,11 +222,12 @@ void GameTime::next() {
             onResetPeriod();
             stop();
             break;
-        case RUN:
-            stop();
-            break;
-        case STOP:
-            start();
+        case GAME:
+            if (state->getChrono() == RUN) {
+                stop();
+            } else {
+                start();
+            }
             break;
         default:
             break;
@@ -239,11 +239,12 @@ void GameTime::prev() {
         case SET_TIME:
             state->setMode(SET_STEP);
             break;
-        case RUN:
-            stop();
-            break;
-        case STOP:
-            start();
+        case GAME:
+            if (state->getChrono() == RUN) {
+                stop();
+            } else {
+                start();
+            }
             break;
         default:
             break;
@@ -309,9 +310,17 @@ void GameTime::increaseTime() {
 
 void GameTime::increase() {
     switch (state->getMode()) {
-        case STOP: increaseRemainingTime(); break;
-        case SET_STEP: increaseStep(); break;
-        case SET_TIME: increaseTime(); break;
+        case GAME: 
+            if (state->getChrono() == STOP) {
+                increaseRemainingTime();
+             }
+             break;
+        case SET_STEP:
+            increaseStep();
+            break;
+        case SET_TIME:
+            increaseTime();
+            break;
         default: break;
     }
 }
@@ -376,9 +385,17 @@ void GameTime::decreaseRemainingTime() {
 
 void GameTime::decrease() {
     switch (state->getMode()) {
-        case STOP: decreaseRemainingTime(); break;
-        case SET_STEP: decreaseStep(); break;
-        case SET_TIME: decreaseTime(); break;
+        case GAME:
+            if (state->getChrono() == STOP) {
+                decreaseRemainingTime();
+            }
+            break;
+        case SET_STEP:
+            decreaseStep();
+            break;
+        case SET_TIME:
+            decreaseTime();
+            break;
         default: break;
     }
 }
@@ -397,6 +414,10 @@ void GameTime::publishTime() {
     }
 }
 
+bool GameTime::isParity() {
+    return homeScore == guestScore;
+}
+
 void GameTime::loopStop() {
     bool show = (hold.isRunning() && !hold.isTriggered()) || (millis() - timeStop) / STOP_FLASH_DURATION_MS % 2;
     if (show) {
@@ -404,10 +425,6 @@ void GameTime::loopStop() {
     } else {
         display->setDisplayState(false);
     }
-}
-
-bool GameTime::isParity() {
-    return homeScore == guestScore;
 }
 
 void GameTime::loopRun() {
@@ -419,6 +436,14 @@ void GameTime::loopRun() {
         showTime();
     } else {
         stop();
+    }
+}
+
+void GameTime::loopGame() {
+    if (state->getChrono() == RUN) {
+        loopRun();
+    } else {
+        loopStop();
     }
 }
 
@@ -437,9 +462,16 @@ void GameTime::loop() {
         setBrightness(brightness);
     }
     switch (state->getMode()) {
-        case STOP: loopStop(); break;
-        case RUN: loopRun(); break;
-        case SET_TIME: loopSetTime(); break;
-        case SET_STEP: loopSetStep(); break;
+        case GAME:
+            loopGame();
+            break;
+        case SET_TIME:
+            loopSetTime();
+            break;
+        case SET_STEP:
+            loopSetStep();
+            break;
+        default: 
+            break;
     }
 }

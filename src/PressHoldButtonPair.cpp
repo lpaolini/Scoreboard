@@ -161,6 +161,14 @@ void PressHoldButtonPair::handleEvent(AceButton* button, uint8_t eventType, uint
     }
 }
 
+bool PressHoldButtonPair::isPressed1() {
+    return pressed1;
+}
+
+bool PressHoldButtonPair::isPressed2() {
+    return pressed2;
+}
+
 void PressHoldButtonPair::repeatDisable() {
     if (repeatPressed1) {
         repeatDisabled1 = true;

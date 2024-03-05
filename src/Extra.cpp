@@ -22,10 +22,9 @@ void Extra::setup(
 ) {
     this->onUpdateFouls = onUpdateFouls;
     this->onUpdateTimeouts = onUpdateTimeouts;
-    display->shutdown(displayIndex, true);
     display->clearDisplay(displayIndex);
     display->setIntensity(displayIndex, brightness);
-    reset();
+    enable(false);
 }
 
 void Extra::reset() {
@@ -86,7 +85,7 @@ bool Extra::isEnabled() {
 }
 
 void Extra::stateChange() {
-    enable(state->isGameMode() && (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME));
+    enable(state->isGamePeriod());
 }
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {

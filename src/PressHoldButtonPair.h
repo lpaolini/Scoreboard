@@ -61,6 +61,8 @@ class PressHoldButtonPair : public IEventHandler {
         PressHoldButtonPair& pressHoldRepeat2(void (*onPressHoldRepeat2)(void));
         PressHoldButtonPair& pressBoth(void (*onPressBoth)(bool pressed));
         PressHoldButtonPair& pressHoldBoth(void (*onPressHoldBoth)(void));
+        bool isPressed1();
+        bool isPressed2();
         void repeatDisable();
         void loop();
 };

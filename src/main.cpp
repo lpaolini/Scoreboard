@@ -21,21 +21,21 @@
 #include "ScoreButton.h"
 #include "ExtraButton.h"
 
-// state
+// State
 
 State *state = new State();
 
-// beeper
+// Beeper
 
 Beeper *beeper = new Beeper(BUZZER_PIN);
 
-// displays
+// Displays
 
 WallDisplay *wallDisplay = new ElvasDisplay(ELVAS_PIN, LED_PIN, state);
 LedControl *displayBus = new LedControl(SPI_DISPLAY_DATA_PIN, SPI_DISPLAY_CLK_PIN, SPI_DISPLAY_CS_PIN, 4);
 Adafruit_7segment *timeDisplay = new Adafruit_7segment();
 
-// controllers
+// Controllers
 
 Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, state, beeper);
 Extra *guestExtra = new Extra(displayBus, 1, BRIGHTNESS, true, state, beeper);
@@ -43,7 +43,7 @@ Score *homeScore = new Score(displayBus, 2, BRIGHTNESS, true, state, beeper);
 Score *guestScore = new Score(displayBus, 3, BRIGHTNESS, false, state, beeper);
 GameTime *gameTime = new GameTime(timeDisplay, TIME_DISPLAY_ADDR, BRIGHTNESS, state, beeper);
 
-// buttons
+// Buttons
 
 ScoreButton homeScoreButton(HOME_SCORE_BUTTON_PIN, 750);
 ScoreButton guestScoreButton(GUEST_SCORE_BUTTON_PIN, 750);
@@ -54,7 +54,7 @@ PressButton undoButton(UNDO_BUTTON_PIN);
 PressButton buzzerButton(BUZZER_BUTTON_PIN);
 PressHoldButtonPair adjustButtons(MINUS_BUTTON_PIN, PLUS_BUTTON_PIN, 2000, 500, 75, 10);
 
-// wiring
+// Wiring
 
 void onHomeFoulsUpdate(uint8_t fouls) {
     wallDisplay->setHomeFouls(fouls);
@@ -82,6 +82,7 @@ void onStateChange() {
     guestScore->stateChange();
     homeExtra->stateChange();
     guestExtra->stateChange();
+    gameTime->stateChange();
 }
 
 void onResetPeriod() {
@@ -94,7 +95,6 @@ void onResetPeriod() {
 void onLastTwoMinutes() {
     homeExtra->lastTwoMinutes();
     guestExtra->lastTwoMinutes();
-    beeper->lastTwoMinutes();
 }
 
 void onHomeScoreUpdate(uint8_t score) {
@@ -107,29 +107,26 @@ void onGuestScoreUpdate(uint8_t score) {
     gameTime->setGuestScore(score);
 }
 
-void setupWallDisplay() {
-    wallDisplay->setup();
+// Reset
+
+void reset() {
+    wallDisplay->reset();
+    homeScore->reset();
+    guestScore->reset();
+    homeExtra->reset();
+    guestExtra->reset();
+    gameTime->reset();
 }
 
-void loopWallDisplay() {
-    wallDisplay->loop();
-}
+// Controllers
 
 void setupControllers() {
-    state->setOnUpdate(onStateChange);
+    state->setup(onStateChange);
     gameTime->setup(onTimeUpdate, onResetPeriod, onLastTwoMinutes);
     homeScore->setup(onHomeScoreUpdate);
     homeExtra->setup(onHomeFoulsUpdate, onHomeTimeoutsUpdate);
     guestScore->setup(onGuestScoreUpdate);
     guestExtra->setup(onGuestFoulsUpdate, onGuestTimeoutsUpdate);
-}
-
-void setupBeeper() {
-    beeper->setup();
-}
-
-void loopBuzzer() {
-    beeper->loop();
 }
 
 void loopControllers() {
@@ -140,32 +137,9 @@ void loopControllers() {
     guestExtra->loop();
 }
 
-void hardReset() {
-    asm volatile ("jmp 0x7800");
-}
+// Buttons
 
-void softReset() {
-    homeScore->reset();
-    guestScore->reset();
-    homeExtra->reset();
-    guestExtra->reset();
-    gameTime->reset();
-    wallDisplay->reset();
-    beeper->ready();
-}
-
-void reset() {
-    if (undoButton.isPressed()) {
-        beeper->confirm([] {
-            hardReset();
-            // softReset();
-        });
-    } else {
-        gameTime->resetPeriod(false);
-    }
-}
-
-void adjustIncrease(bool repeat) {
+void adjustIncrease() {
     if (homeScoreButton.isPressed() || guestScoreButton.isPressed()) {
         if (homeScoreButton.isPressed()) {
             homeScore->increaseScore();
@@ -178,7 +152,7 @@ void adjustIncrease(bool repeat) {
     }
 }
 
-void adjustDecrease(bool repeat) {
+void adjustDecrease() {
     if (homeScoreButton.isPressed() || guestScoreButton.isPressed()) {
         if (homeScoreButton.isPressed()) {
             homeScore->decreaseScore();
@@ -299,38 +273,44 @@ void setupButtons() {
     adjustButtons.setup()
         .press1([] {
             beeper->click();
-            adjustIncrease(false);
+            adjustIncrease();
         })
         .pressHoldRepeat1([] {
-            adjustIncrease(true);
+            adjustIncrease();
         })
         .press2([] {
             beeper->click();
-            adjustDecrease(false);
+            adjustDecrease();
         })
         .pressHoldRepeat2([] {
-            adjustDecrease(true);
+            adjustDecrease();
         })
         .pressBoth([](bool pressed) {
             if (pressed) {
-                if (gameTime->isRunning()) {
-                    beeper->notAllowed();
-                } else {
+                if (state->getChrono() == STOP) {
                     beeper->alert(true);
+                } else {
+                    beeper->notAllowed();
                 }
             } else {
                 beeper->alert(false);
             }
         })
         .pressHoldBoth([] { 
-            if (!gameTime->isRunning()) {
-                reset();
+            if (state->getChrono() == STOP) {
+                if (undoButton.isPressed()) {
+                    reset();
+                } else {
+                    gameTime->resetPeriod(false);
+                }
             }
         });
 
     undoButton.setup()
         .press([] {
-            beeper->click();
+            if (!adjustButtons.isPressed1() || !adjustButtons.isPressed2()) {
+                beeper->click();
+            }
         });
 
     buzzerButton.setup()
@@ -338,7 +318,9 @@ void setupButtons() {
             beeper->click();
             wallDisplay->setBuzzer(true);
         })
-        .release([] { wallDisplay->setBuzzer(false); });
+        .release([] {
+            wallDisplay->setBuzzer(false);
+        });
 }
 
 void loopButtons() {
@@ -352,25 +334,30 @@ void loopButtons() {
     buzzerButton.loop();
 }
 
+// Timer
+
 void setupTimer() {
     Timer1.initialize(BIT_DURATION_MICROSECONDS);
     Timer1.attachInterrupt([] { wallDisplay->update(); });
     Timer1.start();
 }
 
+// Main 
+
 void setup() {
-    Serial.begin(230400); 
+    Serial.begin(230400);
+    while (!Serial) {}
+    beeper->setup();
+    wallDisplay->setup();
     setupControllers();
-    setupBeeper();
     setupButtons();
-    setupWallDisplay();
     setupTimer();
-    beeper->ready();
+    reset();
 }
 
 void loop() {
+    beeper->loop();
+    wallDisplay->loop();
     loopControllers();
-    loopBuzzer();
     loopButtons();
-    loopWallDisplay();
 }

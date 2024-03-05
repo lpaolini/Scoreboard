@@ -26,10 +26,6 @@ void Beeper::timeStop() {
     play(TIME_STOP);
 }
 
-void Beeper::lastTwoMinutes() {
-    play(LAST_TWO_MINUTES);
-}
-
 void Beeper::confirm(void (*callback)()) {
     this->callback = callback;
     play(CONFIRM);

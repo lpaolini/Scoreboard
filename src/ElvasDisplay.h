@@ -82,6 +82,7 @@ class ElvasDisplay : public WallDisplay {
         uint8_t ledPin;
         Timer buzzerTimer = Timer(BUZZER_DURATION_MS, false);
 
+        bool enabled;
         bool showFouls;
         bool showTimeouts;
         bool showPeriod;

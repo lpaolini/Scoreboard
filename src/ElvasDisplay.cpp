@@ -10,21 +10,23 @@ ElvasDisplay::ElvasDisplay(uint8_t outputPin, uint8_t ledPin, State *state) {
 void ElvasDisplay::setup() {
     pinMode(outputPin, OUTPUT);
     pinMode(ledPin, OUTPUT);
-    reset();
 }
 
 void ElvasDisplay::reset() {
+    enabled = false;
     for (uint8_t i = 0; i < DATA_LENGTH; i++) {
         currentState.data[i] = 0;
     }
     nextBit = 0;
     setUnknown1(true);
     setUnknown2(true);
+    copyState(nextState.data, currentState.data);
     showPeriod = false;
-    check();
+    updateRequired = true;
 }
 
 void ElvasDisplay::stateChange() {
+    enabled = true;
     if (state->isGameMode() && (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME)) {
         showFouls = true;
         showTimeouts = true;
@@ -66,8 +68,8 @@ void ElvasDisplay::alterTimeDisplay() {
     if (state->isGameMode()) {
         if (showPeriod) {
             nextState.fields.time3 = DIGIT_OFF;
-            nextState.fields.time2 = DIGIT_OFF;
-            nextState.fields.time1 = state->getPeriod();
+            nextState.fields.time2 = state->getPeriod();
+            nextState.fields.time1 = DIGIT_OFF;
             nextState.fields.time0 = DIGIT_OFF;
         }
     } else {
@@ -97,48 +99,50 @@ void ElvasDisplay::alterTimeoutDisplay() {
 }
 
 void ElvasDisplay::update() {
-    if (updateRequired || nextBit != 0) {
-        if (nextBit == 0) {
-            // create data snapshop and re-arm trigger
-            copyState(updateState.data, nextState.data);
-            updateRequired = false;
-            digitalWrite(ledPin, true);
-            #ifdef SERIAL_DEBUG
-                Serial.print("\nElvas:");
-            #endif
-        }
+    if (enabled) {
+        if (updateRequired || nextBit != 0) {
+            if (nextBit == 0) {
+                // create data snapshop and re-arm trigger
+                copyState(updateState.data, nextState.data);
+                updateRequired = false;
+                digitalWrite(ledPin, true);
+                #ifdef ELVAS_DEBUG
+                    Serial.print(F("\nElvas: ["));
+                #endif
+            }
 
-        if (nextBit < START_LENGTH) {
-            // head
-            setOutput(HIGH);
-        } else if (nextBit < START_LENGTH + 8 * DATA_LENGTH) {
-            // data
-            uint8_t dataBit = nextBit - START_LENGTH;
-            uint8_t bytePtr = dataBit >> 3;
-            uint8_t bitPtr = dataBit & 7;
-            uint8_t bitValue = updateState.data[bytePtr] & (0b10000000 >> bitPtr); // MSB to LSB
-            setOutput(bitValue);
-            #ifdef SERIAL_DEBUG
-                dataBit % 8 || Serial.print(' ');
-                Serial.print(bitValue ? 'O' : '.');
-            #endif
-        } else {
-            // tail
-            setOutput(LOW);
-        }
+            if (nextBit < START_LENGTH) {
+                // head
+                setOutput(HIGH);
+            } else if (nextBit < START_LENGTH + 8 * DATA_LENGTH) {
+                // data
+                uint8_t dataBit = nextBit - START_LENGTH;
+                uint8_t bytePtr = dataBit >> 3;
+                uint8_t bitPtr = dataBit & 7;
+                uint8_t bitValue = updateState.data[bytePtr] & (0b10000000 >> bitPtr); // MSB to LSB
+                setOutput(bitValue);
+                #ifdef ELVAS_DEBUG
+                    dataBit % 8 || Serial.print(' ');
+                    Serial.print(bitValue ? 'O' : '.');
+                #endif
+            } else {
+                // tail
+                setOutput(LOW);
+            }
 
-        if (nextBit < SEQUENCE_LENGTH - 1) {
-            nextBit++;
+            if (nextBit < SEQUENCE_LENGTH - 1) {
+                nextBit++;
+            } else {
+                // end of sequence
+                nextBit = 0;
+                digitalWrite(ledPin, false);
+                #ifdef ELVAS_DEBUG
+                    Serial.print(F(" ]"));
+                #endif
+            }
         } else {
-            // end of sequence
-            nextBit = 0;
-            digitalWrite(ledPin, false);
-            #ifdef SERIAL_DEBUG
-                // Serial.println();
-            #endif
+            check();
         }
-    } else {
-        check();
     }
 }
 
@@ -240,7 +244,7 @@ void ElvasDisplay::loopBuzzer() {
 }
 
 void ElvasDisplay::loopTimeDisplay() {
-    if (state->isGameMode() && state->getPhase() == REGULAR_TIME) {
+    if (state->isGamePeriod()) {
         unsigned long delta = millis() - lastTimeChanged;
         if (delta > 2000) {
             showPeriod = delta / 2000 % 2 == 0;

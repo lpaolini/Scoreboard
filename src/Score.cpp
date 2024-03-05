@@ -18,10 +18,9 @@ Score::Score(
 
 void Score::setup(void (*onUpdate)(uint8_t score)) {
     this->onUpdate = onUpdate;
-    display->shutdown(displayIndex, true);
     display->clearDisplay(displayIndex);
     display->setIntensity(displayIndex, brightness);
-    reset();
+    enable(false);
 }
 
 void Score::reset() {
