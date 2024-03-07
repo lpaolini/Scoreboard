@@ -219,8 +219,8 @@ void GameTime::next() {
             setTime();
             break;
         case SET_TIME:
-            onResetPeriod();
             stop();
+            onResetPeriod();
             break;
         case GAME:
             if (state->getChrono() == RUN) {

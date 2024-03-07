@@ -40,10 +40,10 @@ class State {
         }
 
         void reset() {
-            Mode mode = SET_STEP;
-            Phase phase = REGULAR_TIME;
-            Chrono chrono = STOP;
-            uint8_t period = 1;
+            mode = SET_STEP;
+            phase = REGULAR_TIME;
+            chrono = STOP;
+            period = 1;
             update();
         }
  
@@ -92,11 +92,12 @@ class State {
         }
 
         bool isStartOfGame() {
-            return phase == PREPARATION || (phase == REGULAR_TIME && period == 1);
+            return mode == GAME && (phase == PREPARATION || (phase == REGULAR_TIME && period == 1));
+            // return mode == GAME && phase == REGULAR_TIME && period == 1;
         }
 
         bool isGamePeriod() {
-            return isGameMode() && (phase == REGULAR_TIME || phase == EXTRA_TIME);
+            return mode == GAME && (phase == REGULAR_TIME || phase == EXTRA_TIME);
         }
 
         bool isGameMode() {
