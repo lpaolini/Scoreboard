@@ -170,16 +170,16 @@ void setupButtons() {
         .press([] {
             if (homeScore->isEnabled()) {
                 beeper->click();
+                if (undoButton.isPressed()) {
+                    // adjustButtons.repeatDisable();
+                    // homeScore->decreaseDelta();
+                    homeScore->undo();
+                } else {
+                    adjustButtons.repeatDisable(); 
+                    homeScore->increaseDelta();
+                }
             } else {
                 beeper->notAllowed();
-            }
-            if (undoButton.isPressed()) {
-                // adjustButtons.repeatDisable();
-                // homeScore->decreaseDelta();
-                homeScore->undo();
-            } else {
-                adjustButtons.repeatDisable(); 
-                homeScore->increaseDelta();
             }
         })
         .release([] {
@@ -194,16 +194,16 @@ void setupButtons() {
         .press([] {
             if (guestScore->isEnabled()) {
                 beeper->click();
+                if (undoButton.isPressed()) {
+                    // adjustButtons.repeatDisable();
+                    // guestScore->decreaseDelta();
+                    guestScore->undo();
+                } else {
+                    adjustButtons.repeatDisable(); 
+                    guestScore->increaseDelta();
+                }
             } else {
                 beeper->notAllowed();
-            }
-            if (undoButton.isPressed()) {
-                // adjustButtons.repeatDisable();
-                // guestScore->decreaseDelta();
-                guestScore->undo();
-            } else {
-                adjustButtons.repeatDisable(); 
-                guestScore->increaseDelta();
             }
         })
         .release([] {

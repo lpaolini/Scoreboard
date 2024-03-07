@@ -41,7 +41,7 @@ void Score::enable(bool enabled) {
 }
 
 bool Score::isEnabled() {
-    return enabled;
+    return enabled && state->isGamePeriod();
 }
 
 void Score::stateChange() {
