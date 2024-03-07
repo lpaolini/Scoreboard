@@ -27,7 +27,7 @@ void ElvasDisplay::reset() {
 
 void ElvasDisplay::stateChange() {
     enabled = true;
-    if (state->isGameMode() && (state->getPhase() == REGULAR_TIME || state->getPhase() == EXTRA_TIME)) {
+    if (state->isGamePeriod()) {
         showFouls = true;
         showTimeouts = true;
     } else {
