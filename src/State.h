@@ -91,17 +91,16 @@ class State {
             return phase == REGULAR_TIME ? period : 0;
         }
 
+        bool isGameMode() {
+            return mode == GAME;
+        }
+
         bool isStartOfGame() {
             return mode == GAME && (phase == PREPARATION || (phase == REGULAR_TIME && period == 1));
-            // return mode == GAME && phase == REGULAR_TIME && period == 1;
         }
 
         bool isGamePeriod() {
             return mode == GAME && (phase == REGULAR_TIME || phase == EXTRA_TIME);
-        }
-
-        bool isGameMode() {
-            return mode == GAME;
         }
 
         bool isFourthPeriod() {
