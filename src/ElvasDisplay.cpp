@@ -245,12 +245,8 @@ void ElvasDisplay::loopBuzzer() {
 
 void ElvasDisplay::loopTimeDisplay() {
     if (state->isGamePeriod()) {
-        unsigned long delta = millis() - lastTimeChanged;
-        if (delta > 2000) {
-            showPeriod = delta / 2000 % 2 == 0;
-        } else {
-            showPeriod = false;
-        }
+        // show period once every 5 seconds
+        showPeriod = (millis() - lastTimeChanged) / 1000 % 5 == 4;
     }
 }
 
