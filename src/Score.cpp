@@ -24,15 +24,26 @@ void Score::setup(void (*onUpdate)(uint8_t score)) {
 }
 
 void Score::reset() {
+    resetDelta();
+    resetScore();
+}
+
+void Score::resetScore() {
     score = 0;
-    delta = 0;
-    prevDelta = 0;
-    updating = false;
-    inputTimer.stop();
+    updating = true;
+    inputTimer.stop(true);
     flashTimer.stop();
     updateScoreDisplay();
-    updateDeltaDisplay(delta, false);
     publishScore();
+}
+
+void Score::resetDelta() {
+    delta = 0;
+    prevDelta = 0;
+    updating = true;
+    inputTimer.stop(true);
+    flashTimer.stop();
+    updateDeltaDisplay(delta, false);
 }
 
 void Score::enable(bool enabled) {
@@ -45,6 +56,9 @@ bool Score::isEnabled() {
 }
 
 void Score::stateChange() {
+    if (!state->isGameMode()) {
+        resetDelta();
+    }
     enable(state->isGameMode());
 }
 
@@ -185,13 +199,14 @@ void Score::loopInput() {
     inputTimer.loop();
     if (updating) {
         if (inputTimer.isTriggered()) {
-            if (delta != 0) {
-                score = limitScore(score + delta);
+            score = limitScore(score + delta);
+            if (score != prevScore) {
                 prevDelta = delta;
                 delta = 0;
                 updateScoreDisplay();
                 publishScore();
                 flashTimer.reset();
+                prevScore = score;
                 beeper->confirm();
             }
             updateDeltaDisplay(prevDelta, false);

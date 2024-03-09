@@ -43,12 +43,15 @@ class Score {
         bool enabled;
 
         uint8_t score;
+        uint8_t prevScore;
         int8_t delta;
         int8_t prevDelta;
         bool updating;
         Timer inputTimer = Timer(INPUT_TIMER_MS, false);
         Timer flashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
         void enable(bool enabled);
+        void resetScore();
+        void resetDelta();
         int decimalDigit(int value, int digit);
         uint8_t limitScore(int16_t score);
         void updateScoreDisplay(bool show = true);

@@ -147,9 +147,6 @@ void Extra::publishTimeouts() {
 
 void Extra::resetFouls() {
     fouls = 0;
-    if (state->isStartOfGame()) {
-        prevFouls = 0;
-    }
     inputTimer.stop(true);
     foulsConfirmationTimer.stop();
     updating = true;
@@ -185,9 +182,6 @@ void Extra::decreaseFouls() {
 
 void Extra::resetTimeouts() {
     timeouts = 0;
-    if (state->isStartOfGame()) {
-        prevTimeouts = 0;
-    }
     timeoutsConfirmationTimer.stop();
     updateTimeoutsDisplay();
     publishTimeouts();
