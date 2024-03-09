@@ -23,6 +23,7 @@
 
 class Score {
     private:
+        enum DeltaMode {NORMAL, UPDATE, ALTER};
         // make sure INPUT_TIMER_MS is not less than 2 * FLASH_TIMER_MS * FLASH_COUNT
         const unsigned long INPUT_TIMER_MS = 600;
         const unsigned long CONFIRMATION_FLASH_COUNT = 6;
@@ -41,12 +42,14 @@ class Score {
         void (*onUpdate)(uint8_t score) {};
 
         bool enabled;
+        DeltaMode deltaMode;
 
         uint8_t score;
         uint8_t prevScore;
         int8_t delta;
         int8_t prevDelta;
         bool updating;
+        bool altering;
         Timer inputTimer = Timer(INPUT_TIMER_MS, false);
         Timer flashTimer = Timer(2 * CONFIRMATION_FLASH_COUNT * CONFIRMATION_FLASH_DURATION_MS, false);
         void enable(bool enabled);
@@ -55,7 +58,7 @@ class Score {
         int decimalDigit(int value, int digit);
         uint8_t limitScore(int16_t score);
         void updateScoreDisplay(bool show = true);
-        void updateDeltaDisplay(int8_t delta, bool showIndicator = true);
+        void updateDeltaDisplay(int8_t delta, DeltaMode deltaMode);
         void publishScore();
         void loopInput();
         void loopFlash();
@@ -80,6 +83,7 @@ class Score {
         void clearDelta();
         void increaseScore();
         void decreaseScore();
+        void alterScore(bool enabled);
         void undo();
         void loop();
 };

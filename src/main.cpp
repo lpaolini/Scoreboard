@@ -185,9 +185,10 @@ void setupButtons() {
         .release([] {
             adjustButtons.repeatDisable();
             homeScore->startTimer();
+            homeScore->alterScore(false);
         })
         .pressHold([] {
-            homeScore->clearDelta();
+            homeScore->alterScore(true);
         });
 
     guestScoreButton.setup()
@@ -209,9 +210,10 @@ void setupButtons() {
         .release([] {
             adjustButtons.repeatDisable();
             guestScore->startTimer();
+            guestScore->alterScore(false);
         })
         .pressHold([] {
-            guestScore->clearDelta();
+            guestScore->alterScore(true);
         });
 
     homeExtraButton.setup()

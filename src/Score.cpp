@@ -43,7 +43,7 @@ void Score::resetDelta() {
     updating = true;
     inputTimer.stop(true);
     flashTimer.stop();
-    updateDeltaDisplay(delta, false);
+    updateDeltaDisplay(delta, NORMAL);
 }
 
 void Score::enable(bool enabled) {
@@ -97,19 +97,30 @@ void Score::updateScoreDisplay(bool show) {
     }
 }
 
-void Score::updateDeltaDisplay(int8_t delta, bool showIndicator) {
-    if (showIndicator) {
-        display->setChar(displayIndex, DELTA_POS[invert][0], 'P', false);
-        display->setDigit(displayIndex, DELTA_POS[invert][1], decimalDigit(delta, 0), false);
-    } else {
-        display->setChar(displayIndex, DELTA_POS[invert][0], ' ', false);
-        if (delta != 0) {
+void Score::updateDeltaDisplay(int8_t delta, DeltaMode deltaMode) {
+    switch (deltaMode) {
+        case NORMAL:
+            display->setChar(displayIndex, DELTA_POS[invert][0], ' ', false);
+            if (delta != 0) {
+                display->setDigit(displayIndex, DELTA_POS[invert][1], decimalDigit(delta, 0), false);
+            } else {
+                display->setChar(displayIndex, DELTA_POS[invert][1], ' ', false);
+            }
+            display->setChar(displayIndex, DELTA_POS[invert][2], delta < 0 ? '-' : ' ', false);
+            break;
+        case UPDATE:
+            display->setChar(displayIndex, DELTA_POS[invert][0], 'P', false);
             display->setDigit(displayIndex, DELTA_POS[invert][1], decimalDigit(delta, 0), false);
-        } else {
-            display->setChar(displayIndex, DELTA_POS[invert][1], ' ', false);
-        }
+            display->setChar(displayIndex, DELTA_POS[invert][2], delta < 0 ? '-' : ' ', false);
+            break;
+        case ALTER:
+            display->setChar(displayIndex, DELTA_POS[invert][0], '-', false);
+            display->setChar(displayIndex, DELTA_POS[invert][1], '-', false);
+            display->setChar(displayIndex, DELTA_POS[invert][2], '-', false);
+            break;
+        default:
+            break;
     }
-    display->setChar(displayIndex, DELTA_POS[invert][2], delta < 0 ? '-' : ' ', false);
 }
 
 void Score::publishScore() {
@@ -134,7 +145,7 @@ void Score::undo() {
         }
         inputTimer.stop();
         updating = true;
-        updateDeltaDisplay(delta);
+        updateDeltaDisplay(delta, UPDATE);
     } else {
         beeper->notAllowed();
     }
@@ -156,7 +167,7 @@ void Score::increaseDelta(bool roll) {
             : min(delta + 1, 3);
         inputTimer.stop();
         updating = true;
-        updateDeltaDisplay(delta);
+        updateDeltaDisplay(delta, UPDATE);
     }
 }
 
@@ -167,7 +178,7 @@ void Score::decreaseDelta(bool roll) {
             : max(delta - 1, -3);
         inputTimer.stop();
         updating = true;
-        updateDeltaDisplay(delta);
+        updateDeltaDisplay(delta, UPDATE);
     }
 }
 
@@ -176,7 +187,6 @@ void Score::increaseScore() {
         score = limitScore(score + 1);
         prevDelta = 0;
         updateScoreDisplay();
-        clearDelta();
         publishScore();
     }
 }
@@ -186,8 +196,18 @@ void Score::decreaseScore() {
         score = limitScore(score - 1);
         prevDelta = 0;
         updateScoreDisplay();
-        clearDelta();
         publishScore();
+    }
+}
+
+void Score::alterScore(bool enabled) {
+    if (enabled) {
+        altering = true;
+        clearDelta();
+        updateDeltaDisplay(delta, ALTER);
+    } else if (altering) {
+        altering = false;
+        updateDeltaDisplay(delta, NORMAL);
     }
 }
 
@@ -209,7 +229,7 @@ void Score::loopInput() {
                 prevScore = score;
                 beeper->confirm();
             }
-            updateDeltaDisplay(prevDelta, false);
+            updateDeltaDisplay(prevDelta, NORMAL);
             updating = false;
         }
     }
