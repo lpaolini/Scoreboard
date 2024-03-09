@@ -104,11 +104,11 @@ class State {
         }
 
         bool isFourthPeriod() {
-            return mode == GAME && (phase == REGULAR_TIME && period == 4) && chrono == RUN;
+            return mode == GAME && (phase == REGULAR_TIME && period == 4);
         }
 
         bool isFourthPeriodOrOvertime() {
-            return mode == GAME && ((phase == REGULAR_TIME && period == 4) || phase == EXTRA_TIME) && chrono == RUN;
+            return mode == GAME && ((phase == REGULAR_TIME && period == 4) || phase == EXTRA_TIME);
         }
 
         uint8_t getMaxTimeouts() {

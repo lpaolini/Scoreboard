@@ -44,7 +44,9 @@ void GameTime::reset() {
 }
 
 void GameTime::resetPeriod(bool advancePeriod) {
-    if (state->getPhase() != END_OF_GAME) {
+    if (isEndOfGame()) {
+        beeper->notAllowed();
+    } else {
         if (advancePeriod) {
             increaseStep();
         }
@@ -62,10 +64,6 @@ void GameTime::stateChange() {
 void GameTime::enable(bool enabled) {
     display->setDisplayState(enabled);
     display->writeDisplay();
-}
-
-bool GameTime::isEndOfPeriod() {
-    return state->getMode() == GAME && state->getChrono() == STOP && current.time == 0;
 }
 
 int GameTime::decimalDigit(int value, int digit) {
@@ -97,7 +95,7 @@ void GameTime::showTime() {
     }
 
     if (last.time != current.time) {
-        if (current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
+        if (state->getChrono() == RUN && current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
             if (state->isFourthPeriod()) {
                 onLastTwoMinutes();
             }
@@ -416,6 +414,14 @@ void GameTime::publishTime() {
 
 bool GameTime::isParity() {
     return homeScore == guestScore;
+}
+
+bool GameTime::isEndOfPeriod() {
+    return state->isGameMode() && state->getChrono() == STOP && current.time == 0;
+}
+
+bool GameTime::isEndOfGame() {
+    return state->isFourthPeriodOrOvertime() && state->getChrono() == STOP && !isParity() && current.time == 0;
 }
 
 void GameTime::loopStop() {
