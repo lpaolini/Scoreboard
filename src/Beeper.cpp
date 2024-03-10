@@ -10,10 +10,6 @@ void Beeper::setup() {
     pinMode(pin, OUTPUT);
 }
 
-void Beeper::ready() {
-    play(READY);
-}
-
 void Beeper::click() {
     play(CLICK);
 }
@@ -50,7 +46,10 @@ void Beeper::play(Tone *sequence, bool looped) {
 }
 
 void Beeper::stop() {
-    sequence = nullptr;
+    if (looped) {
+        sequence = nullptr;
+        looped = false;
+    }
 }
 
 void Beeper::loop() {

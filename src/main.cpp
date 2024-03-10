@@ -268,7 +268,7 @@ void setupButtons() {
             if (undoButton.isPressed()) {
                 gameTime->prev();
             } else {
-                gameTime->next(); 
+                gameTime->next();
             }
         });
 

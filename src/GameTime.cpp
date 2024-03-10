@@ -170,24 +170,12 @@ void GameTime::showPeriod() {
             display->writeDigitAscii(3, 'p', false);
             display->writeDigitAscii(4, 'p', false);
             break;
-        case END_OF_GAME:
-            display->writeDigitAscii(0, '-', false);
-            display->writeDigitAscii(1, '-', false);
-            display->writeDigitAscii(3, '-', false);
-            display->writeDigitAscii(4, '-', false);
-            break;
         default:
             break;
     }
 
     display->drawColon(false);
     display->writeDisplay();
-}
-
-void GameTime::setTime() {
-    if (state->getPhase() != END_OF_GAME) {
-        state->setMode(SET_TIME);
-    }
 }
 
 void GameTime::start() {
@@ -214,7 +202,7 @@ void GameTime::stop() {
 void GameTime::next() {
     switch (state->getMode()) {
         case SET_STEP:
-            setTime();
+            state->setMode(SET_TIME);
             break;
         case SET_TIME:
             stop();
@@ -238,10 +226,8 @@ void GameTime::prev() {
             state->setMode(SET_STEP);
             break;
         case GAME:
-            if (state->getChrono() == RUN) {
-                stop();
-            } else {
-                start();
+            if (time == preset[currentPreset]) {
+                resetPeriod(false);
             }
             break;
         default:
@@ -268,11 +254,6 @@ void GameTime::increaseStep() {
             state->setPhase(REGULAR_TIME);
             state->setPeriod(3);
             break;
-        case EXTRA_TIME:
-            if (!isParity()) {
-                state->setPhase(END_OF_GAME);
-            }
-            break;
         default:
             break;
     }
@@ -292,8 +273,6 @@ void GameTime::increasePeriod() {
         case 4:
             if (isParity()) {
                 state->setPhase(EXTRA_TIME);
-            } else {
-                state->setPhase(END_OF_GAME);
             }
             break;
         default:
@@ -311,28 +290,21 @@ void GameTime::increase() {
         case GAME: 
             if (state->getChrono() == STOP) {
                 increaseRemainingTime();
-             }
-             break;
+            }
+            break;
         case SET_STEP:
             increaseStep();
             break;
         case SET_TIME:
             increaseTime();
             break;
-        default: break;
+        default:
+            break;
     }
 }
 
 void GameTime::decreaseStep() {
     switch (state->getPhase()) {
-        case END_OF_GAME:
-            if (isParity()) {
-                state->setPhase(EXTRA_TIME);
-            } else {
-                state->setPhase(REGULAR_TIME);
-                state->setPeriod(4);
-            }
-            break;
         case EXTRA_TIME:
             state->setPhase(REGULAR_TIME);
             state->setPeriod(4);
@@ -394,7 +366,8 @@ void GameTime::decrease() {
         case SET_TIME:
             decreaseTime();
             break;
-        default: break;
+        default:
+            break;
     }
 }
 

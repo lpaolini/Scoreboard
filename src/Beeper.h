@@ -30,13 +30,12 @@ class Beeper {
             unsigned int frequency;
             unsigned int duration;
         };
-        Tone READY[4] = {{NOTE_C6, 100}, {NOTE_E6, 100}, {NOTE_G6, 100}, {0, 0}};
         Tone CLICK[2] = {{NOTE_C7, 25}, {0, 0}};
-        Tone ALERT[3] = {{0, 500}, {NOTE_D6, 25}, {0, 0}};
         Tone TIME_START[4] = {{NOTE_C7, 50}, {0, 50}, {NOTE_C7, 50}, {0, 0}};
         Tone TIME_STOP[2] = {{NOTE_C7, 250}, {0, 0}};
         Tone CONFIRM[4] = {{NOTE_B6, 50}, {0, 25}, {NOTE_D7, 50}, {0, 0}};
         Tone NOT_ALLOWED[2] = {{NOTE_C6, 250}, {0, 0}};
+        Tone ALERT[3] = {{0, 500}, {NOTE_D6, 25}, {0, 0}};
         uint8_t pin;
         unsigned long time;
         Tone *sequence = nullptr;
@@ -51,7 +50,6 @@ class Beeper {
             uint8_t pin
         );
         void setup();
-        void ready();
         void click();
         void timeStart();
         void timeStop();

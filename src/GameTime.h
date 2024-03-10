@@ -54,7 +54,6 @@ class GameTime {
         void showMinSec();
         void showSecTenth();
         void showLastTwoMinutesAlert();
-        void setTime();
         void showPeriod();
         void increaseRemainingTime();
         void increaseStep();
