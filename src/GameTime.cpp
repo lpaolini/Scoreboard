@@ -78,7 +78,7 @@ int GameTime::decimalDigit(int value, int digit) {
 void GameTime::showTime() {
     display->setDisplayState(true);
 
-    if (time <= 59900 && state->isGamePeriod()) {
+    if (time <= 59900) {
         adjustedTime = time + 99; // adjust for truncation to tenths of seconds
         current.fields.min = 0;
         current.fields.sec = adjustedTime / 1000;
