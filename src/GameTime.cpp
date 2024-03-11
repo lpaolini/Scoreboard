@@ -47,10 +47,10 @@ void GameTime::resetPeriod(bool advancePeriod) {
     if (isEndOfGame()) {
         beeper->notAllowed();
     } else {
+        state->setMode(SET_STEP);
         if (advancePeriod) {
             increaseStep();
         }
-        state->setMode(SET_STEP);
         time = preset[currentPreset];
         last.time = 0;
         beeper->confirm();
