@@ -82,7 +82,7 @@ void GameTime::showTime() {
         current.fields.min = 0;
         current.fields.sec = adjustedTime / 1000;
         current.fields.tenth = adjustedTime % 1000 / 100;
-        tenths = true;
+        tenths = current.time > 0;
         showSecTenth();
     } else {
         adjustedTime = time + 999; // adjust for truncation to whole seconds
