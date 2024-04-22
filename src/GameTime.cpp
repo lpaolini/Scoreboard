@@ -52,7 +52,6 @@ void GameTime::resetPeriod(bool advancePeriod) {
             increaseStep();
         }
         time = preset[currentPreset];
-        last.time = 0;
         beeper->confirm();
     }
 }
@@ -94,17 +93,19 @@ void GameTime::showTime() {
         showMinSec();
     }
 
-    if (last.time != current.time) {
-        if (state->getChrono() == RUN && current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
-            if (state->isFourthPeriod()) {
-                onLastTwoMinutes();
+    if (state->isGameMode()) {
+        if (last.time != current.time) {
+            if (state->getChrono() == RUN && current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
+                if (state->isFourthPeriod()) {
+                    onLastTwoMinutes();
+                }
+                if (state->isFourthPeriodOrOvertime()) {
+                    beeper->confirm();
+                }
             }
-            if (state->isFourthPeriodOrOvertime()) {
-                beeper->confirm();
-            }
+            last.time = current.time;
+            publishTime();
         }
-        last.time = current.time;
-        publishTime();
     }
 }
 
@@ -179,20 +180,16 @@ void GameTime::showPeriod() {
 }
 
 void GameTime::start() {
-    if (time == 0) {
-        resetPeriod(true);
-    } else {
-        state->setChrono(RUN);
-        this->timeStart = millis();
-        showTime();
-        setBrightness(START_FLASH_BRIGHTNESS);
-        startFlash.reset();
-        beeper->timeStart();
-    }
+    state->setChrono(RUN);
+    this->timeStart = millis();
+    showTime();
+    setBrightness(START_FLASH_BRIGHTNESS);
+    startFlash.reset();
+    beeper->timeStart();
 }
 
 void GameTime::stop() {
-    state->setMode(GAME);
+    // state->setMode(GAME);
     state->setChrono(STOP);
     this->timeStop = millis();
     showTime();
@@ -205,14 +202,20 @@ void GameTime::next() {
             state->setMode(SET_TIME);
             break;
         case SET_TIME:
+            last.time = 0;
+            state->setMode(GAME);
             stop();
             onResetPeriod();
             break;
         case GAME:
-            if (state->getChrono() == RUN) {
-                stop();
+            if (state->getChrono() == STOP) {
+                if (time == 0) {
+                    resetPeriod(true);
+                } else {
+                    start();
+                }
             } else {
-                start();
+                stop();
             }
             break;
         default:
@@ -226,8 +229,10 @@ void GameTime::prev() {
             state->setMode(SET_STEP);
             break;
         case GAME:
-            if (time == preset[currentPreset]) {
-                resetPeriod(false);
+            if (state->getChrono() == STOP) {
+                if (time == preset[currentPreset]) {
+                    resetPeriod(false);
+                }
             }
             break;
         default:
