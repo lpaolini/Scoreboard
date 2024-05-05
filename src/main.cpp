@@ -60,16 +60,22 @@ void onHomeFoulsUpdate(uint8_t fouls) {
     wallDisplay->setHomeFouls(fouls);
 }
 
-void onHomeTimeoutsUpdate(uint8_t timeouts) {
+void onHomeTimeoutsUpdate(uint8_t timeouts, bool increased) {
     wallDisplay->setHomeTimeouts(timeouts);
+    if (increased) {
+        gameTime->startTimeout();
+    } 
 }
 
 void onGuestFoulsUpdate(uint8_t fouls) {
     wallDisplay->setGuestFouls(fouls);
 }
 
-void onGuestTimeoutsUpdate(uint8_t timeouts) {
+void onGuestTimeoutsUpdate(uint8_t timeouts, bool increased) {
     wallDisplay->setGuestTimeouts(timeouts);
+    if (increased) {
+        gameTime->startTimeout();
+    } 
 }
 
 void onTimeUpdate(Time time, bool tenths) {
@@ -107,6 +113,14 @@ void onGuestScoreUpdate(uint8_t score) {
     gameTime->setGuestScore(score);
 }
 
+void onEndOfPeriod() {
+    wallDisplay->endOfPeriod();
+}
+
+void onEndOfTimeout() {
+    wallDisplay->endOfTimeout();
+}
+
 // Reset
 
 void reset() {
@@ -122,7 +136,7 @@ void reset() {
 
 void setupControllers() {
     state->setup(onStateChange);
-    gameTime->setup(onTimeUpdate, onResetPeriod, onLastTwoMinutes);
+    gameTime->setup(onTimeUpdate, onResetPeriod, onLastTwoMinutes, onEndOfPeriod, onEndOfTimeout);
     homeScore->setup(onHomeScoreUpdate);
     homeExtra->setup(onHomeFoulsUpdate, onHomeTimeoutsUpdate);
     guestScore->setup(onGuestScoreUpdate);

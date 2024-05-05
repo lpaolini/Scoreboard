@@ -18,6 +18,8 @@ class WallDisplay {
         virtual void setHomeTimeouts(uint8_t timeouts);
         virtual void setGuestTimeouts(uint8_t timeouts);
         virtual void setBuzzer(bool beeper);
+        virtual void endOfPeriod();
+        virtual void endOfTimeout();
         virtual void loop();
 };
 

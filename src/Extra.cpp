@@ -18,7 +18,7 @@ Extra::Extra(
 
 void Extra::setup(
     void (*onUpdateFouls)(uint8_t fouls), 
-    void (*onUpdateTimeouts)(uint8_t timeouts)
+    void (*onUpdateTimeouts)(uint8_t timeouts, bool increased)
 ) {
     this->onUpdateFouls = onUpdateFouls;
     this->onUpdateTimeouts = onUpdateTimeouts;
@@ -139,9 +139,9 @@ void Extra::updateTimeoutsDisplay(bool show) {
     }
 }
 
-void Extra::publishTimeouts() {
+void Extra::publishTimeouts(bool increased) {
     if (onUpdateTimeouts != nullptr) {
-        onUpdateTimeouts(timeouts);
+        onUpdateTimeouts(timeouts, increased);
     }
 }
 
@@ -196,7 +196,7 @@ void Extra::updateTimeouts(uint8_t timeouts) {
 }
 
 void Extra::increaseTimeouts() {
-    if (timeouts < maxTimeouts) {
+    if (timeouts < maxTimeouts && state->getChrono() == STOP) {
         updateTimeouts(timeouts + 1);
     } else {
         beeper->notAllowed();
@@ -242,7 +242,7 @@ void Extra::loopInput() {
     }
     if (timeouts != prevTimeouts) {
         updateTimeoutsDisplay();
-        publishTimeouts();
+        publishTimeouts(timeouts > prevTimeouts);
         prevTimeouts = timeouts;
         timeoutsConfirmationTimer.reset();
         beeper->confirm();

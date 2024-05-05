@@ -152,9 +152,6 @@ void ElvasDisplay::setTime(Time time, bool tenths) {
     } else {
         setTimeMinSec(time);
     }
-    if (time.time == 0) {
-        buzzer(true);
-    }
     lastTimeChanged = millis();
 }
 
@@ -224,22 +221,30 @@ void ElvasDisplay::setUnknown2(bool value) {
     currentState.fields.unknown2 = value;
 }
 
-void ElvasDisplay::buzzer(bool enabled) {
-    if (enabled) {
-        setUnknown2(false);
-        setBuzzer(true);
-        buzzerTimer.reset();
-    } else {
-        setBuzzer(false);
-        setUnknown2(true);
-        buzzerTimer.stop();
-    }
+void ElvasDisplay::buzzerOn(unsigned long duration) {
+    setUnknown2(false);
+    setBuzzer(true);
+    buzzerTimer.reset(duration);
+}
+
+void ElvasDisplay::buzzerOff() {
+    setBuzzer(false);
+    setUnknown2(true);
+    buzzerTimer.stop();
+}
+
+void ElvasDisplay::endOfPeriod() {
+    buzzerOn(END_OF_PERIOD_BUZZER_MS);
+}
+
+void ElvasDisplay::endOfTimeout() {
+    buzzerOn(END_OF_TIMEOUT_BUZZER_MS);
 }
 
 void ElvasDisplay::loopBuzzer() {
     buzzerTimer.loop();
     if (buzzerTimer.isTriggered()) {
-        buzzer(false);
+        buzzerOff();
     }
 }
 

@@ -5,7 +5,7 @@
 
 enum Mode {RESET, SET_STEP, SET_TIME, GAME};
 enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME};
-enum Chrono {STOP, RUN};
+enum Chrono {STOP, RUN, TIMEOUT};
 
 class State {
     private:

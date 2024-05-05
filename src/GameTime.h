@@ -28,13 +28,16 @@ class GameTime {
         void (*onTimeUpdate)(Time time, bool tenths) {};
         void (*onResetPeriod)() {};
         void (*onLastTwoMinutes)() {};
+        void (*onEndOfPeriod)() {};
+        void (*onEndOfTimeout)() {};
 
         uint8_t currentPreset = defaultPreset;
 
         uint8_t homeScore;
         uint8_t guestScore;
 
-        unsigned long time;
+        unsigned long periodTime;
+        unsigned long timeoutTime;
         unsigned long adjustedTime;
         unsigned long timeStart;
         unsigned long timeStop;
@@ -50,10 +53,11 @@ class GameTime {
         void enable(bool enabled);
         int decimalDigit(int value, int digit);
         uint8_t presetCount();
-        void showTime();
-        void showMinSec();
-        void showSecTenth();
+        void showPeriodTime();
+        void showPeriodTimeMinSec();
+        void showPeriodTimeSecTenth();
         void showLastTwoMinutesAlert();
+        void showTimeoutTime();
         void showPeriod();
         void increaseRemainingTime();
         void increaseStep();
@@ -69,6 +73,7 @@ class GameTime {
         void publishTime();
         void loopRun();
         void loopStop();
+        void loopTimeout();
         void loopGame();
         void loopSetTime();
         void loopSetStep();
@@ -85,7 +90,9 @@ class GameTime {
         void setup(
             void (*onTimeUpdate)(Time time, bool tenths),
             void (*onResetPeriod)(),
-            void (*onLastTwoMinutes)()
+            void (*onLastTwoMinutes)(),
+            void (*onEndOfPeriod)(),
+            void (*onEndOfTimeout)()
         );
         void reset();
         void resetPeriod(bool advancePeriod = false);
@@ -98,6 +105,7 @@ class GameTime {
         void setGuestScore(uint8_t guestScore);
         void decrease();
         void increase();
+        void startTimeout();
         void loop();
 };
 

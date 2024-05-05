@@ -18,6 +18,8 @@ class ElvasDisplay : public WallDisplay {
         const bool INVERT_OUTPUT = false;
         const uint16_t BUZZER_DURATION_MS = 3000;
         const uint8_t DIGIT_OFF = 10;
+        const unsigned long END_OF_PERIOD_BUZZER_MS = 3000;
+        const unsigned long END_OF_TIMEOUT_BUZZER_MS = 1000;
 
         typedef union {
             struct Fields {
@@ -101,7 +103,8 @@ class ElvasDisplay : public WallDisplay {
         void setTimeSecTenth(Time time);
         void setUnknown1(bool value);
         void setUnknown2(bool value);
-        void buzzer(bool enabled);
+        void buzzerOn(unsigned long duration);
+        void buzzerOff();
         void loopBuzzer();
         void loopTimeDisplay();
 
@@ -119,6 +122,8 @@ class ElvasDisplay : public WallDisplay {
         void setHomeTimeouts(uint8_t timeouts);
         void setGuestTimeouts(uint8_t timeouts);
         void setBuzzer(bool buzzer);
+        void endOfPeriod();
+        void endOfTimeout();
         void loop();
 };
 

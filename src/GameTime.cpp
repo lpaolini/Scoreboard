@@ -17,11 +17,15 @@ GameTime::GameTime(
 void GameTime::setup( 
     void (*onTimeUpdate)(Time time, bool tenths),
     void (*onResetPeriod)(),
-    void (*onLastTwoMinutes)()
+    void (*onLastTwoMinutes)(),
+    void (*onEndOfPeriod)(),
+    void (*onEndOfTimeout)()
 ) {
     this->onTimeUpdate = onTimeUpdate;
     this->onResetPeriod = onResetPeriod;
     this->onLastTwoMinutes = onLastTwoMinutes;
+    this->onEndOfPeriod = onEndOfPeriod;
+    this->onEndOfTimeout = onEndOfTimeout;
     display->begin(address);
     setBrightness(brightness);
     enable(false);
@@ -51,7 +55,7 @@ void GameTime::resetPeriod(bool advancePeriod) {
         if (advancePeriod) {
             increaseStep();
         }
-        time = preset[currentPreset];
+        periodTime = preset[currentPreset];
         beeper->confirm();
     }
 }
@@ -74,23 +78,23 @@ int GameTime::decimalDigit(int value, int digit) {
     }
 }
 
-void GameTime::showTime() {
+void GameTime::showPeriodTime() {
     display->setDisplayState(true);
 
-    if (time <= 59900) {
-        adjustedTime = time + 99; // adjust for truncation to tenths of seconds
+    if (periodTime <= 59900) {
+        adjustedTime = periodTime + 99; // adjust for truncation to tenths of seconds
         current.fields.min = 0;
         current.fields.sec = adjustedTime / 1000;
         current.fields.tenth = adjustedTime % 1000 / 100;
         tenths = current.time > 0;
-        showSecTenth();
+        showPeriodTimeSecTenth();
     } else {
-        adjustedTime = time + 999; // adjust for truncation to whole seconds
+        adjustedTime = periodTime + 999; // adjust for truncation to whole seconds
         current.fields.min = adjustedTime / 60000;
         current.fields.sec = adjustedTime % 60000 / 1000;
         current.fields.tenth = 0;
         tenths = false;
-        showMinSec();
+        showPeriodTimeMinSec();
     }
 
     if (state->isGameMode()) {
@@ -109,7 +113,7 @@ void GameTime::showTime() {
     }
 }
 
-void GameTime::showMinSec() {
+void GameTime::showPeriodTimeMinSec() {
     if (current.fields.min >= 10) {
         display->writeDigitNum(0, decimalDigit(current.fields.min, 1), false);
     } else {
@@ -118,11 +122,11 @@ void GameTime::showMinSec() {
     display->writeDigitNum(1, decimalDigit(current.fields.min, 0), false);
     display->writeDigitNum(3, decimalDigit(current.fields.sec, 1), false);
     display->writeDigitNum(4, decimalDigit(current.fields.sec, 0), false);
-    display->drawColon(state->getChrono() == RUN ? (time) / RUN_COLON_FLASH_DURATION_MS % 2 : true);
+    display->drawColon(state->getChrono() == RUN ? (periodTime) / RUN_COLON_FLASH_DURATION_MS % 2 : true);
     display->writeDisplay();
 }
 
-void GameTime::showSecTenth() {
+void GameTime::showPeriodTimeSecTenth() {
     showLastTwoMinutesAlert();
     if (current.fields.sec < 10) {
         display->writeDigitAscii(1, ' ', false);
@@ -136,16 +140,27 @@ void GameTime::showSecTenth() {
 }
 
 void GameTime::showLastTwoMinutesAlert() {
-    if (state->isFourthPeriodOrOvertime() && time <= 120000 && time / 250 % 2) {
+    if (state->isFourthPeriodOrOvertime() && periodTime <= 120000 && periodTime / 250 % 2) {
         display->writeDigitRaw(0, 0b01001001);
     } else {
         display->writeDigitAscii(0, ' ', false);
     }
 }
 
+void GameTime::showTimeoutTime() {
+    display->setDisplayState(true);
+    adjustedTime = timeoutTime + 999; // adjust for truncation to whole seconds
+    uint8_t seconds = adjustedTime / 1000;
+    display->writeDigitAscii(0, ' ', false);
+    display->writeDigitNum(1, decimalDigit(seconds, 1), false);
+    display->writeDigitNum(3, decimalDigit(seconds, 0), false);
+    display->writeDigitAscii(4, ' ', false);
+    display->drawColon(false);
+    display->writeDisplay();
+}
+
 void GameTime::showPeriod() {
     display->setDisplayState(true);
-
     switch (state->getPhase()) {
         case PREPARATION:
             display->writeDigitAscii(0, 'P', false);
@@ -182,17 +197,16 @@ void GameTime::showPeriod() {
 void GameTime::start() {
     state->setChrono(RUN);
     this->timeStart = millis();
-    showTime();
+    showPeriodTime();
     setBrightness(START_FLASH_BRIGHTNESS);
     startFlash.reset();
     beeper->timeStart();
 }
 
 void GameTime::stop() {
-    // state->setMode(GAME);
     state->setChrono(STOP);
     this->timeStop = millis();
-    showTime();
+    showPeriodTime();
     beeper->timeStop();
 }
 
@@ -209,7 +223,7 @@ void GameTime::next() {
             break;
         case GAME:
             if (state->getChrono() == STOP) {
-                if (time == 0) {
+                if (periodTime == 0) {
                     resetPeriod(true);
                 } else {
                     start();
@@ -230,7 +244,7 @@ void GameTime::prev() {
             break;
         case GAME:
             if (state->getChrono() == STOP) {
-                if (time == preset[currentPreset]) {
+                if (periodTime == preset[currentPreset]) {
                     resetPeriod(false);
                 }
             }
@@ -241,9 +255,9 @@ void GameTime::prev() {
 }
 
 void GameTime::increaseRemainingTime() {
-    time = min(MAX_TIME, time + 1000);
+    periodTime = min(MAX_TIME, periodTime + 1000);
     hold.reset();
-    showTime();
+    showPeriodTime();
 }
 
 void GameTime::increaseStep() {
@@ -287,7 +301,7 @@ void GameTime::increasePeriod() {
 
 void GameTime::increaseTime() {
     currentPreset = min(currentPreset + 1, presetCount() - 1);
-    time = preset[currentPreset];
+    periodTime = preset[currentPreset];
 }
 
 void GameTime::increase() {
@@ -347,14 +361,14 @@ void GameTime::decreasePeriod() {
 
 void GameTime::decreaseTime() {
     currentPreset = max(currentPreset - 1, 0);
-    time = preset[currentPreset];
+    periodTime = preset[currentPreset];
 }
 
 void GameTime::decreaseRemainingTime() {
-    if (time > 0) {
-        time = max(1000L, time - min(1000, time));
+    if (periodTime > 0) {
+        periodTime = max(1000L, periodTime - min(1000, periodTime));
         hold.reset();
-        showTime();
+        showPeriodTime();
     }
 }
 
@@ -384,6 +398,12 @@ void GameTime::setGuestScore(uint8_t guestScore) {
     this->guestScore = guestScore;
 }
 
+void GameTime::startTimeout() {
+    state->setChrono(TIMEOUT);
+    this->timeStart = millis();
+    timeoutTime = 60000;
+}
+
 void GameTime::publishTime() {
     if (onTimeUpdate != nullptr) {
         onTimeUpdate(current, tenths);
@@ -405,7 +425,7 @@ bool GameTime::isEndOfGame() {
 void GameTime::loopStop() {
     bool show = (hold.isRunning() && !hold.isTriggered()) || (millis() - timeStop) / STOP_FLASH_DURATION_MS % 2;
     if (show) {
-        showTime();
+        showPeriodTime();
     } else {
         display->setDisplayState(false);
     }
@@ -414,25 +434,51 @@ void GameTime::loopStop() {
 void GameTime::loopRun() {
     unsigned long now = millis();
     unsigned long elapsed = now - timeStart;
-    time = time > elapsed ? time - elapsed : 0;
+    periodTime = periodTime > elapsed ? periodTime - elapsed : 0;
     timeStart = now;
-    if (time > 0) {
-        showTime();
+    if (periodTime > 0) {
+        showPeriodTime();
     } else {
         stop();
+        if (onEndOfPeriod != nullptr) {
+            onEndOfPeriod();
+        }
+    }
+}
+
+void GameTime::loopTimeout() {
+    unsigned long now = millis();
+    unsigned long elapsed = now - timeStart;
+    timeoutTime = timeoutTime > elapsed ? timeoutTime - elapsed : 0;
+    timeStart = now;
+    if (timeoutTime > 0) {
+        showTimeoutTime();
+    } else {
+        stop();
+        if (onEndOfTimeout != nullptr) {
+            onEndOfTimeout();
+        }
     }
 }
 
 void GameTime::loopGame() {
-    if (state->getChrono() == RUN) {
-        loopRun();
-    } else {
-        loopStop();
+    switch (state->getChrono()) {
+        case RUN:
+            loopRun();
+            break;
+        case TIMEOUT:
+            loopTimeout();
+            break;
+        case STOP:
+            loopStop();
+            break;
+        default:
+            break;
     }
 }
 
 void GameTime::loopSetTime() {
-    showTime();
+    showPeriodTime();
 }
 
 void GameTime::loopSetStep() {

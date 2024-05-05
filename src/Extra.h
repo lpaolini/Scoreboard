@@ -39,7 +39,7 @@ class Extra {
         Beeper *beeper;
 
         void (*onUpdateFouls)(uint8_t fouls) {};
-        void (*onUpdateTimeouts)(uint8_t timeouts) {};
+        void (*onUpdateTimeouts)(uint8_t timeouts, bool increased) {};
 
         bool enabled;
 
@@ -62,7 +62,7 @@ class Extra {
         void updateFoulsDisplay(bool show = true);
         void publishFouls();
         void updateTimeoutsDisplay(bool show = true);
-        void publishTimeouts();
+        void publishTimeouts(bool increased = false);
         void loopInput();
         void loopFoulsConfirmation();
         void loopTimeoutsConfirmation();
@@ -78,7 +78,7 @@ class Extra {
         );
         void setup(
             void (*onUpdateFouls)(uint8_t fouls), 
-            void (*onUpdateTimeouts)(uint8_t timeouts)
+            void (*onUpdateTimeouts)(uint8_t timeouts, bool increased)
         );
         void reset();
         bool isEnabled();
