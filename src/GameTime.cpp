@@ -128,10 +128,10 @@ void GameTime::showPeriodTimeMinSec() {
 
 void GameTime::showPeriodTimeSecTenth() {
     showLastTwoMinutesAlert();
-    if (current.fields.sec < 10) {
-        display->writeDigitAscii(1, ' ', false);
-    } else {
+    if (current.fields.sec >= 10) {
         display->writeDigitNum(1, decimalDigit(current.fields.sec, 1), false);
+    } else {
+        display->writeDigitAscii(1, ' ', false);
     }
     display->writeDigitNum(3, decimalDigit(current.fields.sec, 0), true);
     display->writeDigitNum(4, decimalDigit(current.fields.tenth, 0), false);
@@ -140,8 +140,8 @@ void GameTime::showPeriodTimeSecTenth() {
 }
 
 void GameTime::showLastTwoMinutesAlert() {
-    if (state->isFourthPeriodOrOvertime() && periodTime <= 120000 && periodTime / 250 % 2) {
-        display->writeDigitRaw(0, 0b01001001);
+    if (state->isFourthPeriodOrOvertime() && periodTime <= 120000 && periodTime / 250 % 2 && state->getChrono() == RUN) {
+        display->writeDigitRaw(0, 0b01001001); // three horizontal bars
     } else {
         display->writeDigitAscii(0, ' ', false);
     }
@@ -401,7 +401,7 @@ void GameTime::setGuestScore(uint8_t guestScore) {
 void GameTime::startTimeout() {
     state->setChrono(TIMEOUT);
     this->timeStart = millis();
-    timeoutTime = 60000;
+    timeoutTime = TIMEOUT_TIME;
 }
 
 void GameTime::publishTime() {

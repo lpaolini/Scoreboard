@@ -12,6 +12,7 @@ class GameTime {
     private:
         const unsigned long MIN = 60000; // one minute
         const unsigned long MAX_TIME = 20 * MIN; // 20 minutes
+        const unsigned long TIMEOUT_TIME = 1 * MIN; // 1 minute
         const unsigned long preset[7] {3 * MIN, 5 * MIN, 8 * MIN, 10 * MIN, 12 * MIN, 15 * MIN, 20 * MIN};
         const uint8_t defaultPreset = 3;
         const uint8_t START_FLASH_BRIGHTNESS = 15;
