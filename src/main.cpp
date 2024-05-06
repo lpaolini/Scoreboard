@@ -62,7 +62,7 @@ void onHomeFoulsUpdate(uint8_t fouls) {
 
 void onHomeTimeoutsUpdate(uint8_t timeouts, bool increased) {
     wallDisplay->setHomeTimeouts(timeouts);
-    if (increased) {
+    if (increased && state->getChrono() == STOP) {
         gameTime->startTimeout();
     } 
 }
@@ -73,7 +73,7 @@ void onGuestFoulsUpdate(uint8_t fouls) {
 
 void onGuestTimeoutsUpdate(uint8_t timeouts, bool increased) {
     wallDisplay->setGuestTimeouts(timeouts);
-    if (increased) {
+    if (increased && state->getChrono() == STOP) {
         gameTime->startTimeout();
     } 
 }

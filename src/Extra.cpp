@@ -196,7 +196,7 @@ void Extra::updateTimeouts(uint8_t timeouts) {
 }
 
 void Extra::increaseTimeouts() {
-    if (timeouts < maxTimeouts && state->getChrono() == STOP) {
+    if (timeouts < maxTimeouts) {
         updateTimeouts(timeouts + 1);
     } else {
         beeper->notAllowed();
