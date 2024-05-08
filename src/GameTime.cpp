@@ -151,10 +151,10 @@ void GameTime::showTimeoutTime() {
     display->setDisplayState(true);
     adjustedTime = timeoutTime + 999; // adjust for truncation to whole seconds
     uint8_t seconds = adjustedTime / 1000;
-    display->writeDigitAscii(0, ' ', false);
+    display->writeDigitAscii(0, '-', false);
     display->writeDigitNum(1, decimalDigit(seconds, 1), false);
     display->writeDigitNum(3, decimalDigit(seconds, 0), false);
-    display->writeDigitAscii(4, ' ', false);
+    display->writeDigitAscii(4, '-', false);
     display->drawColon(false);
     display->writeDisplay();
 }
