@@ -206,7 +206,6 @@ void GameTime::start() {
 void GameTime::stop() {
     state->setChrono(STOP);
     this->timeStop = millis();
-    showPeriodTime();
     beeper->timeStop();
 }
 
