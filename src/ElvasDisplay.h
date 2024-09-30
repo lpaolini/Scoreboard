@@ -87,8 +87,10 @@ class ElvasDisplay : public WallDisplay {
         bool enabled;
         bool showFouls;
         bool showTimeouts;
+        bool showTime;
         bool showPeriod;
         unsigned long lastTimeChanged;
+        Time time;
 
         volatile uint8_t nextBit;
         int decimalDigit(int value, int digit);

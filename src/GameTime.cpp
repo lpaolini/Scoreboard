@@ -87,13 +87,17 @@ void GameTime::showPeriodTime() {
         current.fields.sec = adjustedTime / 1000;
         current.fields.tenth = adjustedTime % 1000 / 100;
         tenths = current.time > 0;
-        showPeriodTimeSecTenth();
     } else {
         adjustedTime = periodTime + 999; // adjust for truncation to whole seconds
         current.fields.min = adjustedTime / 60000;
         current.fields.sec = adjustedTime % 60000 / 1000;
         current.fields.tenth = 0;
         tenths = false;
+    }
+
+    if (tenths) {
+        showPeriodTimeSecTenth();
+    } else {
         showPeriodTimeMinSec();
     }
 
@@ -114,7 +118,7 @@ void GameTime::showPeriodTime() {
 }
 
 void GameTime::showPeriodTimeMinSec() {
-    if (current.fields.min >= 10) {
+    if (current.fields.min >= 10 || current.time == 0) {
         display->writeDigitNum(0, decimalDigit(current.fields.min, 1), false);
     } else {
         showLastTwoMinutesAlert();

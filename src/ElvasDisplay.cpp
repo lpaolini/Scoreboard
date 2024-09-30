@@ -68,7 +68,13 @@ void ElvasDisplay::alterTimeDisplay() {
     if (state->isGameMode()) {
         if (showPeriod) {
             nextState.fields.time3 = DIGIT_OFF;
-            nextState.fields.time2 = state->getPeriod();
+            nextState.fields.time2 = DIGIT_OFF;
+            nextState.fields.time1 = state->getPeriod();
+            nextState.fields.time0 = DIGIT_OFF;
+        }
+        if (!showTime) {
+            nextState.fields.time3 = DIGIT_OFF;
+            nextState.fields.time2 = DIGIT_OFF;
             nextState.fields.time1 = DIGIT_OFF;
             nextState.fields.time0 = DIGIT_OFF;
         }
@@ -147,6 +153,7 @@ void ElvasDisplay::update() {
 }
 
 void ElvasDisplay::setTime(Time time, bool tenths) {
+    this->time = time;
     if (tenths) {
         setTimeSecTenth(time);
     } else {
@@ -250,8 +257,15 @@ void ElvasDisplay::loopBuzzer() {
 
 void ElvasDisplay::loopTimeDisplay() {
     if (state->isGamePeriod()) {
-        // show period once every 5 seconds
-        showPeriod = (millis() - lastTimeChanged) / 1000 % 5 == 4;
+        if (time.fields.min == 0 && time.fields.sec > 0) {
+            // flash time when paused during the last ten seconds
+            showTime = (millis() - lastTimeChanged) / 250 % 2 == 0;
+            showPeriod = false;
+        } else {
+            // show period once every 5 seconds
+            showTime = true;
+            showPeriod = (millis() - lastTimeChanged) / 1000 % 5 == 4;
+        }
     }
 }
 
