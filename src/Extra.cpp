@@ -38,6 +38,10 @@ void Extra::resetPeriod() {
     updating = false;
     inputTimer.stop();
     switch (state->getPhase()) {
+        case TRAINING:
+            resetFouls();
+            resetTimeouts();
+            break;
         case PREPARATION:
             break;
         case REGULAR_TIME:

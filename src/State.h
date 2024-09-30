@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 enum Mode {RESET, SET_STEP, SET_TIME, GAME};
-enum Phase {PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME};
+enum Phase {TRAINING, PREPARATION, REGULAR_TIME, INTERVAL, EXTRA_TIME};
 enum Chrono {STOP, RUN, TIMEOUT};
 
 class State {
@@ -96,11 +96,11 @@ class State {
         }
 
         bool isStartOfGame() {
-            return mode == GAME && (phase == PREPARATION || (phase == REGULAR_TIME && period == 1));
+            return mode == GAME && (phase == TRAINING || phase == PREPARATION || (phase == REGULAR_TIME && period == 1));
         }
 
         bool isGamePeriod() {
-            return mode == GAME && (phase == REGULAR_TIME || phase == EXTRA_TIME);
+            return mode == GAME && (phase == TRAINING || phase == REGULAR_TIME || phase == EXTRA_TIME);
         }
 
         bool isFourthPeriod() {

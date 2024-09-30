@@ -52,7 +52,7 @@ void GameTime::resetPeriod(bool advancePeriod) {
         beeper->notAllowed();
     } else {
         state->setMode(SET_STEP);
-        if (advancePeriod) {
+        if (advancePeriod && state->getPhase() != TRAINING) {
             increaseStep();
         }
         periodTime = preset[currentPreset];
@@ -162,6 +162,12 @@ void GameTime::showTimeoutTime() {
 void GameTime::showPeriod() {
     display->setDisplayState(true);
     switch (state->getPhase()) {
+        case TRAINING:
+            display->writeDigitAscii(0, 'A', false);
+            display->writeDigitAscii(1, 'L', false);
+            display->writeDigitAscii(3, 'L', false);
+            display->writeDigitAscii(4, 'n', false);
+            break;
         case PREPARATION:
             display->writeDigitAscii(0, 'P', false);
             display->writeDigitAscii(1, 'r', false);
@@ -261,6 +267,9 @@ void GameTime::increaseRemainingTime() {
 
 void GameTime::increaseStep() {
     switch (state->getPhase()) {
+        case TRAINING:
+            state->setPhase(PREPARATION);
+            break;
         case PREPARATION:
             state->setPhase(REGULAR_TIME);
             state->setPeriod(1);
@@ -333,6 +342,9 @@ void GameTime::decreaseStep() {
             break;
         case REGULAR_TIME:
             decreasePeriod();
+            break;
+        case PREPARATION:
+            state->setPhase(TRAINING);
             break;
         default:
             break;
