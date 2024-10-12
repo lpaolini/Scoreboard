@@ -20,7 +20,7 @@ void ElvasDisplay::reset() {
     nextBit = 0;
     setUnknown1(true);
     setUnknown2(true);
-    copyState(nextState.data, currentState.data);
+    copyState(currentState.data, nextState.data);
     showPeriod = false;
     updateRequired = true;
 }
@@ -50,14 +50,14 @@ void ElvasDisplay::setOutput(bool level) {
     digitalWrite(outputPin, level);
 }
 
-void ElvasDisplay::copyState(void *dst, const void *src) {
+void ElvasDisplay::copyState(const void *src, void *dst) {
     noInterrupts();
     memcpy(dst, src, DATA_LENGTH * sizeof(uint8_t));
     interrupts();
 }
 
 void ElvasDisplay::check() {
-    copyState(nextState.data, currentState.data);
+    copyState(currentState.data, nextState.data);
     alterTimeDisplay();
     alterFoulsDisplay();
     alterTimeoutDisplay();
@@ -109,7 +109,7 @@ void ElvasDisplay::update() {
         if (updateRequired || nextBit != 0) {
             if (nextBit == 0) {
                 // create data snapshop and re-arm trigger
-                copyState(updateState.data, nextState.data);
+                copyState(nextState.data, updateState.data);
                 updateRequired = false;
                 digitalWrite(ledPin, true);
                 #ifdef ELVAS_DEBUG

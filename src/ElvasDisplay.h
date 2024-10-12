@@ -94,7 +94,7 @@ class ElvasDisplay : public WallDisplay {
         volatile uint8_t nextBit;
         int decimalDigit(int value, int digit);
         bool updateRequired = false;
-        void copyState(void *dst, const void *src);
+        void copyState(const void *src, void *dst);
         void check();
         void alterTimeDisplay();
         void alterFoulsDisplay();
