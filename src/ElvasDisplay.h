@@ -15,7 +15,6 @@ class ElvasDisplay : public WallDisplay {
         static const uint8_t DATA_LENGTH = 13;
         const uint8_t START_LENGTH = 9;
         const uint8_t SEQUENCE_LENGTH = 120;
-        const bool INVERT_OUTPUT = false;
         const uint16_t BUZZER_DURATION_MS = 3000;
         const uint8_t DIGIT_OFF = 10;
         const unsigned long END_OF_PERIOD_BUZZER_MS = 3000;

@@ -47,7 +47,7 @@ int ElvasDisplay::decimalDigit(int value, int digit) {
 }
 
 void ElvasDisplay::setOutput(bool level) {
-    digitalWrite(outputPin, level != INVERT_OUTPUT);
+    digitalWrite(outputPin, level);
 }
 
 void ElvasDisplay::copyState(void *dst, const void *src) {
