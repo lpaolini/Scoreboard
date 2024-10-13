@@ -76,6 +76,9 @@ void Extra::resetPeriod() {
     maxTimeouts = state->getMaxTimeouts();
     updateFoulsDisplay();
     updateTimeoutsDisplay();
+    display->setChar(displayIndex, 3, ' ', false);
+    display->setChar(displayIndex, 4, ' ', false);
+    
 }
 
 void Extra::enable(bool enabled) {
@@ -88,7 +91,42 @@ bool Extra::isEnabled() {
 }
 
 void Extra::stateChange() {
-    enable(state->isGamePeriod());
+    if (state->getMode() == SET_STEP || state->getMode() == SET_TIME) {
+        enable(true);
+        if (invert) {
+            if (state->getMode() == SET_STEP) {
+                display->setChar(displayIndex, 7, 'P', false);
+                display->setChar(displayIndex, 6, 'E', false);
+                display->setChar(displayIndex, 5, 'r', false);
+                display->setChar(displayIndex, 4, 'i', false);
+                display->setChar(displayIndex, 3, 'o', false);
+                display->setChar(displayIndex, 2, 'd', false);
+                display->setChar(displayIndex, 1, 'o', false);
+                display->setChar(displayIndex, 0, ' ', false);
+            }            
+            if (state->getMode() == SET_TIME) {
+                display->setChar(displayIndex, 7, 'd', false);
+                display->setChar(displayIndex, 6, 'u', false);
+                display->setChar(displayIndex, 5, 'r', false);
+                display->setChar(displayIndex, 4, 'A', false);
+                display->setChar(displayIndex, 3, 't', false);
+                display->setChar(displayIndex, 2, 'A', false);
+                display->setChar(displayIndex, 1, ' ', false);
+                display->setChar(displayIndex, 0, ' ', false);
+            }
+        } else {
+            display->setChar(displayIndex, 7, ' ', false);
+            display->setChar(displayIndex, 6, ' ', false);
+            display->setChar(displayIndex, 5, 'S', false);
+            display->setChar(displayIndex, 4, 'C', false);
+            display->setChar(displayIndex, 3, 'E', false);
+            display->setChar(displayIndex, 2, 'G', false);
+            display->setChar(displayIndex, 1, 'L', false);
+            display->setChar(displayIndex, 0, 'I', false);
+        }
+    } else {
+        enable(state->isGamePeriod());
+    }
 }
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {
