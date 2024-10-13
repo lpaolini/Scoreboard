@@ -35,6 +35,8 @@ void ElvasDisplay::stateChange() {
         showTimeouts = false;
     }
     lastTimeChanged = millis();
+    lastHomeScoreChanged = millis() - SCORE_FLASH_DURATION_MS;
+    lastGuestScoreChanged = millis() - SCORE_FLASH_DURATION_MS;
 }
 
 int ElvasDisplay::decimalDigit(int value, int digit) {
@@ -61,6 +63,8 @@ void ElvasDisplay::check() {
     alterTimeDisplay();
     alterFoulsDisplay();
     alterTimeoutDisplay();
+    alterHomeScoreDisplay();
+    alterGuestScoreDisplay();
     updateRequired = memcmp(nextState.data, updateState.data, DATA_LENGTH * sizeof(uint8_t)) != 0;
 }
 
@@ -101,6 +105,22 @@ void ElvasDisplay::alterTimeoutDisplay() {
         nextState.fields.homeService = 0;
         nextState.fields.guestTimeouts = 0;
         nextState.fields.guestService = 0;
+    }
+}
+
+void ElvasDisplay::alterHomeScoreDisplay() {
+    if (!showHomeScore) {
+        nextState.fields.homeScore2 = DIGIT_OFF;
+        nextState.fields.homeScore1 = DIGIT_OFF;
+        nextState.fields.homeScore0 = DIGIT_OFF;
+    }
+}
+
+void ElvasDisplay::alterGuestScoreDisplay() {
+    if (!showGuestScore) {
+        nextState.fields.guestScore2 = DIGIT_OFF;
+        nextState.fields.guestScore1 = DIGIT_OFF;
+        nextState.fields.guestScore0 = DIGIT_OFF;
     }
 }
 
@@ -181,6 +201,9 @@ void ElvasDisplay::setHomeScore(uint8_t score) {
         currentState.fields.homeScore2 = decimalDigit(score, 2);
         currentState.fields.homeScore1 = decimalDigit(score, 1);
         currentState.fields.homeScore0 = decimalDigit(score, 0);
+        if (score != 0) {
+            lastHomeScoreChanged = millis();
+        }
     }
 }
 
@@ -189,6 +212,9 @@ void ElvasDisplay::setGuestScore(uint8_t score) {
         currentState.fields.guestScore2 = decimalDigit(score, 2);
         currentState.fields.guestScore1 = decimalDigit(score, 1);
         currentState.fields.guestScore0 = decimalDigit(score, 0);
+        if (score != 0) {
+            lastGuestScoreChanged = millis();
+        }
     }
 }
 
@@ -256,17 +282,23 @@ void ElvasDisplay::loopBuzzer() {
 }
 
 void ElvasDisplay::loopTimeDisplay() {
+    unsigned long now = millis();
+    unsigned long deltaTimeChanged = now - lastTimeChanged;
+    unsigned long deltaHomeScoreChanged = now - lastHomeScoreChanged;
+    unsigned long deltaGuestScoreChanged = now - lastGuestScoreChanged;
     if (state->isGamePeriod()) {
         if (time.fields.min == 0 && time.fields.sec > 0) {
             // flash time when paused during the last ten seconds
-            showTime = (millis() - lastTimeChanged) / 250 % 2 == 0;
+            showTime = deltaTimeChanged / 250 % 2 == 0;
             showPeriod = false;
         } else {
             // show period once every 5 seconds
             showTime = true;
-            showPeriod = (millis() - lastTimeChanged) / 1000 % 5 == 4;
+            showPeriod = deltaTimeChanged / 1000 % 5 == 4;
         }
     }
+    showHomeScore = deltaHomeScoreChanged > SCORE_FLASH_DURATION_MS || deltaHomeScoreChanged / 250 % 2 == 0;
+    showGuestScore = deltaGuestScoreChanged > SCORE_FLASH_DURATION_MS || deltaGuestScoreChanged / 250 % 2 == 0;
 }
 
 void ElvasDisplay::loop() {

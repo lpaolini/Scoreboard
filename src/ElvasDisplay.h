@@ -19,6 +19,7 @@ class ElvasDisplay : public WallDisplay {
         const uint8_t DIGIT_OFF = 10;
         const unsigned long END_OF_PERIOD_BUZZER_MS = 3000;
         const unsigned long END_OF_TIMEOUT_BUZZER_MS = 1000;
+        const unsigned long SCORE_FLASH_DURATION_MS = 2000;
 
         typedef union {
             struct Fields {
@@ -88,7 +89,11 @@ class ElvasDisplay : public WallDisplay {
         bool showTimeouts;
         bool showTime;
         bool showPeriod;
+        bool showHomeScore;
+        bool showGuestScore;
         unsigned long lastTimeChanged;
+        unsigned long lastHomeScoreChanged;
+        unsigned long lastGuestScoreChanged;
         Time time;
 
         volatile uint8_t nextBit;
@@ -99,6 +104,8 @@ class ElvasDisplay : public WallDisplay {
         void alterTimeDisplay();
         void alterFoulsDisplay();
         void alterTimeoutDisplay();
+        void alterHomeScoreDisplay();
+        void alterGuestScoreDisplay();
         void setOutput(bool level);
         void setTimeMinSec(Time time);
         void setTimeSecTenth(Time time);
