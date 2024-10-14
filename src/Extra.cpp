@@ -131,10 +131,7 @@ void Extra::stateChange() {
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {
     if (show) {
-        display->setLed(displayIndex, pos, 3, true);
-        display->setLed(displayIndex, pos, 4, true);
-        display->setLed(displayIndex, pos, 5, true);
-        display->setLed(displayIndex, pos, 7, true);
+        display->setChar(displayIndex, pos, 'o', false);
     } else {
         display->setChar(displayIndex, pos, '_', false);
     }
