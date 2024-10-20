@@ -381,7 +381,7 @@ void GameTime::decreaseTime() {
 
 void GameTime::decreaseRemainingTime() {
     if (periodTime > 0) {
-        periodTime = max(1000L, periodTime - min(1000, periodTime));
+        periodTime = max(1000UL, periodTime - min(1000UL, periodTime));
         hold.reset();
         showPeriodTime();
     }

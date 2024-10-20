@@ -163,7 +163,7 @@ int Score::decimalDigit(int value, int digit) {
 void Score::increaseDelta(bool roll) {
     if (enabled) {
         delta = roll
-            ? (max(0, delta) + 1) % 4
+            ? (max((int8_t) 0, delta) + 1) % 4
             : min(delta + 1, 3);
         inputTimer.stop();
         updating = true;
@@ -174,7 +174,7 @@ void Score::increaseDelta(bool roll) {
 void Score::decreaseDelta(bool roll) {
     if (enabled) {
         delta = roll
-            ? (min(0, delta) - 1) % 4
+            ? (min((int8_t) 0, delta) - 1) % 4
             : max(delta - 1, -3);
         inputTimer.stop();
         updating = true;
@@ -212,7 +212,7 @@ void Score::alterScore(bool enabled) {
 }
 
 uint8_t Score::limitScore(int16_t score) {
-    return min(MAX_SCORE, max(0, score));
+    return min((int16_t) MAX_SCORE, max((int16_t) 0, score));
 }
 
 void Score::loopInput() {
