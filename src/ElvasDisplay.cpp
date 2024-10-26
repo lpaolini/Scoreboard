@@ -238,7 +238,7 @@ void ElvasDisplay::setHomeTimeouts(uint8_t timeouts) {
 }
 
 void ElvasDisplay::setGuestTimeouts(uint8_t timeouts) {
-    currentState.fields.guestTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
+    currentState.fields.guestTimeouts = timeouts == 1 ? 2 : timeouts > 1 ? 3 : 0;
     currentState.fields.guestService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
 }
 
