@@ -24,6 +24,7 @@ void Extra::setup(
     this->onUpdateTimeouts = onUpdateTimeouts;
     display->clearDisplay(displayIndex);
     display->setIntensity(displayIndex, brightness);
+    display->shutdown(displayIndex, false);
     enable(false);
 }
 
@@ -35,6 +36,7 @@ void Extra::reset() {
 }
 
 void Extra::resetPeriod() {
+    display->clearDisplay(displayIndex);
     updating = false;
     inputTimer.stop();
     switch (state->getPhase()) {
@@ -76,13 +78,9 @@ void Extra::resetPeriod() {
     maxTimeouts = state->getMaxTimeouts();
     updateFoulsDisplay(SHOW_FOULS);
     updateTimeoutsDisplay(SHOW_TIMEOUTS);
-    display->setChar(displayIndex, 3, ' ', false);
-    display->setChar(displayIndex, 4, ' ', false);
-    
 }
 
 void Extra::enable(bool enabled) {
-    display->shutdown(displayIndex, !enabled);
     this->enabled = enabled;
 }
 
@@ -91,43 +89,7 @@ bool Extra::isEnabled() {
 }
 
 void Extra::stateChange() {
-    if (state->getMode() == SET_STEP || state->getMode() == SET_TIME) {
-        enable(false);
-        display->shutdown(displayIndex, false);
-        if (invert) {
-            if (state->getMode() == SET_STEP) {
-                display->setChar(displayIndex, 7, 'P', false);
-                display->setChar(displayIndex, 6, 'E', false);
-                display->setChar(displayIndex, 5, 'r', false);
-                display->setChar(displayIndex, 4, 'i', false);
-                display->setChar(displayIndex, 3, 'o', false);
-                display->setChar(displayIndex, 2, 'd', false);
-                display->setChar(displayIndex, 1, 'o', false);
-                display->setChar(displayIndex, 0, ' ', false);
-            }            
-            if (state->getMode() == SET_TIME) {
-                display->setChar(displayIndex, 7, 'd', false);
-                display->setChar(displayIndex, 6, 'u', false);
-                display->setChar(displayIndex, 5, 'r', false);
-                display->setChar(displayIndex, 4, 'A', false);
-                display->setChar(displayIndex, 3, 't', false);
-                display->setChar(displayIndex, 2, 'A', false);
-                display->setChar(displayIndex, 1, ' ', false);
-                display->setChar(displayIndex, 0, ' ', false);
-            }
-        } else {
-            display->setChar(displayIndex, 7, ' ', false);
-            display->setChar(displayIndex, 6, ' ', false);
-            display->setChar(displayIndex, 5, 'S', false);
-            display->setChar(displayIndex, 4, 'C', false);
-            display->setChar(displayIndex, 3, 'E', false);
-            display->setChar(displayIndex, 2, 'G', false);
-            display->setChar(displayIndex, 1, 'L', false);
-            display->setChar(displayIndex, 0, 'I', false);
-        }
-    } else {
-        enable(state->isGamePeriod());
-    }
+    enable(state->isGamePeriod());
 }
 
 void Extra::printTimeoutChar(uint8_t pos, bool show) {
@@ -139,23 +101,25 @@ void Extra::printTimeoutChar(uint8_t pos, bool show) {
 }
 
 void Extra::updateFoulsDisplay(FoulsDisplayMode foulsDisplayMode) {
-    if (foulsDisplayMode == SHOW_BONUS) {
-        display->setChar(displayIndex, FOULS_POS[invert][2], 'b', false);
-        display->setChar(displayIndex, FOULS_POS[invert][1], 'o', false);
-        display->setChar(displayIndex, FOULS_POS[invert][0], 'n', false);
-    } else if (foulsDisplayMode == SHOW_FOULS) {
-        display->setChar(displayIndex, FOULS_POS[invert][2], 'F', false);
-        uint8_t tenths = decimalDigit(fouls, 1);
-        if (tenths) {
-            display->setDigit(displayIndex, FOULS_POS[invert][1], tenths, false);
+    if (enabled) {
+        if (foulsDisplayMode == SHOW_BONUS) {
+            display->setChar(displayIndex, FOULS_POS[invert][2], 'b', false);
+            display->setChar(displayIndex, FOULS_POS[invert][1], 'o', false);
+            display->setChar(displayIndex, FOULS_POS[invert][0], 'n', false);
+        } else if (foulsDisplayMode == SHOW_FOULS) {
+            display->setChar(displayIndex, FOULS_POS[invert][2], 'F', false);
+            uint8_t tenths = decimalDigit(fouls, 1);
+            if (tenths) {
+                display->setDigit(displayIndex, FOULS_POS[invert][1], tenths, false);
+            } else {
+                display->setChar(displayIndex, FOULS_POS[invert][1], ' ', false);
+            }
+            display->setDigit(displayIndex, FOULS_POS[invert][0], decimalDigit(fouls, 0), false);
         } else {
+            display->setChar(displayIndex, FOULS_POS[invert][2], ' ', false);
             display->setChar(displayIndex, FOULS_POS[invert][1], ' ', false);
+            display->setChar(displayIndex, FOULS_POS[invert][0], ' ', false);
         }
-        display->setDigit(displayIndex, FOULS_POS[invert][0], decimalDigit(fouls, 0), false);
-    } else {
-        display->setChar(displayIndex, FOULS_POS[invert][2], ' ', false);
-        display->setChar(displayIndex, FOULS_POS[invert][1], ' ', false);
-        display->setChar(displayIndex, FOULS_POS[invert][0], ' ', false);
     }
 }
 
@@ -166,20 +130,22 @@ void Extra::publishFouls() {
 }
 
 void Extra::updateTimeoutsDisplay(TimeoutsDisplayMode timeoutsDisplayMode) {
-    if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 2) {
-        printTimeoutChar(TIMEOUTS_POS[invert][2], timeouts > 2);
-    } else {
-        display->setChar(displayIndex, TIMEOUTS_POS[invert][2], ' ', false);
-    }
-    if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 1) {
-        printTimeoutChar(TIMEOUTS_POS[invert][1], timeouts > 1);
-    } else {
-        display->setChar(displayIndex, TIMEOUTS_POS[invert][1], ' ', false);
-    }
-    if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 0) {
-        printTimeoutChar(TIMEOUTS_POS[invert][0], timeouts > 0);
-    } else {
-        display->setChar(displayIndex, TIMEOUTS_POS[invert][0], ' ', false);
+    if (enabled) {
+        if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 2) {
+            printTimeoutChar(TIMEOUTS_POS[invert][2], timeouts > 2);
+        } else {
+            display->setChar(displayIndex, TIMEOUTS_POS[invert][2], ' ', false);
+        }
+        if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 1) {
+            printTimeoutChar(TIMEOUTS_POS[invert][1], timeouts > 1);
+        } else {
+            display->setChar(displayIndex, TIMEOUTS_POS[invert][1], ' ', false);
+        }
+        if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 0) {
+            printTimeoutChar(TIMEOUTS_POS[invert][0], timeouts > 0);
+        } else {
+            display->setChar(displayIndex, TIMEOUTS_POS[invert][0], ' ', false);
+        }
     }
 }
 

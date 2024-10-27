@@ -37,10 +37,10 @@ Adafruit_7segment *timeDisplay = new Adafruit_7segment();
 
 // Controllers
 
-Extra *homeExtra = new Extra(displayBus, 0, BRIGHTNESS, false, state, beeper);
-Extra *guestExtra = new Extra(displayBus, 1, BRIGHTNESS, true, state, beeper);
-Score *homeScore = new Score(displayBus, 2, BRIGHTNESS, true, state, beeper);
-Score *guestScore = new Score(displayBus, 3, BRIGHTNESS, false, state, beeper);
+Extra *homeExtra = new Extra(displayBus, HOME_EXTRA_DISPLAY_ADDR, BRIGHTNESS, false, state, beeper);
+Extra *guestExtra = new Extra(displayBus, GUEST_EXTRA_DISPLAY_ADDR, BRIGHTNESS, true, state, beeper);
+Score *homeScore = new Score(displayBus, HOME_SCORE_DISPLAY_ADDR, BRIGHTNESS, true, state, beeper);
+Score *guestScore = new Score(displayBus, GUEST_SCORE_DISPLAY_ADDR, BRIGHTNESS, false, state, beeper);
 GameTime *gameTime = new GameTime(timeDisplay, TIME_DISPLAY_ADDR, BRIGHTNESS, state, beeper);
 
 // Buttons
@@ -82,6 +82,44 @@ void onTimeUpdate(Time time, bool tenths) {
     wallDisplay->setTime(time, tenths);
 }
 
+void showSelectPeriod() {
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 7, ' ', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 6, ' ', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 5, 'S', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 4, 'C', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 3, 'E', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 2, 'G', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 1, 'L', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 0, 'I', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 7, 'P', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 6, 'E', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 5, 'r', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 4, 'i', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 3, 'o', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 2, 'd', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 1, 'o', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 0, ' ', false);
+}
+
+void showSelectDuration() {
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 7, ' ', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 6, ' ', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 5, 'S', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 4, 'C', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 3, 'E', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 2, 'G', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 1, 'L', false);
+    displayBus->setChar(HOME_EXTRA_DISPLAY_ADDR, 0, 'I', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 7, 'd', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 6, 'u', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 5, 'r', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 4, 'A', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 3, 't', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 2, 'A', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 1, ' ', false);
+    displayBus->setChar(GUEST_EXTRA_DISPLAY_ADDR, 0, ' ', false);
+}
+
 void onStateChange() {
     wallDisplay->stateChange();
     homeScore->stateChange();
@@ -89,6 +127,12 @@ void onStateChange() {
     homeExtra->stateChange();
     guestExtra->stateChange();
     gameTime->stateChange();
+    if (state->getMode() == SET_STEP) {
+        showSelectPeriod();
+    }            
+    if (state->getMode() == SET_TIME) {
+        showSelectDuration();
+    }
 }
 
 void onResetPeriod() {
