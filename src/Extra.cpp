@@ -74,8 +74,8 @@ void Extra::resetPeriod() {
             break;
     }
     maxTimeouts = state->getMaxTimeouts();
-    updateFoulsDisplay();
-    updateTimeoutsDisplay();
+    updateFoulsDisplay(SHOW_FOULS);
+    updateTimeoutsDisplay(SHOW_TIMEOUTS);
     display->setChar(displayIndex, 3, ' ', false);
     display->setChar(displayIndex, 4, ' ', false);
     
@@ -92,7 +92,8 @@ bool Extra::isEnabled() {
 
 void Extra::stateChange() {
     if (state->getMode() == SET_STEP || state->getMode() == SET_TIME) {
-        enable(true);
+        enable(false);
+        display->shutdown(displayIndex, false);
         if (invert) {
             if (state->getMode() == SET_STEP) {
                 display->setChar(displayIndex, 7, 'P', false);
@@ -137,8 +138,12 @@ void Extra::printTimeoutChar(uint8_t pos, bool show) {
     }
 }
 
-void Extra::updateFoulsDisplay(bool show) {
-    if (show) {
+void Extra::updateFoulsDisplay(FoulsDisplayMode foulsDisplayMode) {
+    if (foulsDisplayMode == SHOW_BONUS) {
+        display->setChar(displayIndex, FOULS_POS[invert][2], 'b', false);
+        display->setChar(displayIndex, FOULS_POS[invert][1], 'o', false);
+        display->setChar(displayIndex, FOULS_POS[invert][0], 'n', false);
+    } else if (foulsDisplayMode == SHOW_FOULS) {
         display->setChar(displayIndex, FOULS_POS[invert][2], 'F', false);
         uint8_t tenths = decimalDigit(fouls, 1);
         if (tenths) {
@@ -160,18 +165,18 @@ void Extra::publishFouls() {
     }
 }
 
-void Extra::updateTimeoutsDisplay(bool show) {
-    if (show && maxTimeouts > 2) {
+void Extra::updateTimeoutsDisplay(TimeoutsDisplayMode timeoutsDisplayMode) {
+    if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 2) {
         printTimeoutChar(TIMEOUTS_POS[invert][2], timeouts > 2);
     } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][2], ' ', false);
     }
-    if (show && maxTimeouts > 1) {
+    if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 1) {
         printTimeoutChar(TIMEOUTS_POS[invert][1], timeouts > 1);
     } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][1], ' ', false);
     }
-    if (show && maxTimeouts > 0) {
+    if (timeoutsDisplayMode == SHOW_TIMEOUTS && maxTimeouts > 0) {
         printTimeoutChar(TIMEOUTS_POS[invert][0], timeouts > 0);
     } else {
         display->setChar(displayIndex, TIMEOUTS_POS[invert][0], ' ', false);
@@ -188,8 +193,9 @@ void Extra::resetFouls() {
     fouls = 0;
     inputTimer.stop(true);
     foulsConfirmationTimer.stop();
+    bonusConfirmationTimer.stop();
     updating = true;
-    updateFoulsDisplay();
+    updateFoulsDisplay(SHOW_FOULS);
     publishFouls();
 }
 
@@ -198,8 +204,9 @@ void Extra::updateFouls(uint8_t fouls) {
         this->fouls = fouls;
         inputTimer.reset();
         foulsConfirmationTimer.stop();
+        bonusConfirmationTimer.stop();
         updating = true;
-        updateFoulsDisplay();
+        updateFoulsDisplay(SHOW_FOULS);
     }
 }
 
@@ -222,7 +229,7 @@ void Extra::decreaseFouls() {
 void Extra::resetTimeouts() {
     timeouts = 0;
     timeoutsConfirmationTimer.stop();
-    updateTimeoutsDisplay();
+    updateTimeoutsDisplay(SHOW_TIMEOUTS);
     publishTimeouts();
 }
 
@@ -230,7 +237,7 @@ void Extra::updateTimeouts(uint8_t timeouts) {
     if (enabled) {
         this->timeouts = timeouts;
         timeoutsConfirmationTimer.stop();
-        updateTimeoutsDisplay();
+        updateTimeoutsDisplay(SHOW_TIMEOUTS);
     }
 }
 
@@ -270,7 +277,7 @@ void Extra::loopInput() {
     if (updating) {
         if (inputTimer.isTriggered()) {
             if (fouls != prevFouls) {
-                updateFoulsDisplay();
+                updateFoulsDisplay(SHOW_FOULS);
                 publishFouls();
                 foulsConfirmationTimer.reset();
                 prevFouls = fouls;
@@ -280,7 +287,7 @@ void Extra::loopInput() {
         }
     }
     if (timeouts != prevTimeouts) {
-        updateTimeoutsDisplay();
+        updateTimeoutsDisplay(SHOW_TIMEOUTS);
         publishTimeouts(timeouts > prevTimeouts);
         prevTimeouts = timeouts;
         timeoutsConfirmationTimer.reset();
@@ -290,15 +297,23 @@ void Extra::loopInput() {
 
 void Extra::loopFoulsConfirmation() {
     foulsConfirmationTimer.loop();
+    bonusConfirmationTimer.loop();
     if (foulsConfirmationTimer.isRunning()) {
-        updateFoulsDisplay(foulsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2);
+        updateFoulsDisplay((foulsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2) ? SHOW_FOULS : FOULS_OFF);
+    } else if (fouls == 4 && foulsConfirmationTimer.isTriggered()) {
+        bonusConfirmationTimer.reset();
+    }
+    if (bonusConfirmationTimer.isRunning()) {
+        updateFoulsDisplay((bonusConfirmationTimer.elapsed() / BONUS_FLASH_DURATION_MS % 2) ? SHOW_BONUS : FOULS_OFF);
+    } else if (bonusConfirmationTimer.isTriggered()) {
+        updateFoulsDisplay(SHOW_FOULS);
     }
 }
 
 void Extra::loopTimeoutsConfirmation() {
     timeoutsConfirmationTimer.loop();
     if (timeoutsConfirmationTimer.isRunning()) {
-        updateTimeoutsDisplay(timeoutsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2);
+        updateTimeoutsDisplay((timeoutsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2) ? SHOW_TIMEOUTS : TIMEOUTS_OFF);
     }
 }
 
