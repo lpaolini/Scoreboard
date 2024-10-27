@@ -8,9 +8,9 @@ Timer::Timer(unsigned long duration, bool autoReset) {
 
 void Timer::stop(bool trigger) {
     running = false;
-    last = millis();
     triggered = trigger;
     expired = false;
+    last = millis();
 }
 
 void Timer::reset() {
