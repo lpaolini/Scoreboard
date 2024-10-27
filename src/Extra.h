@@ -72,6 +72,7 @@ class Extra {
         void publishTimeouts(bool increased = false);
         void loopInput();
         void loopFoulsConfirmation();
+        void loopBonusConfirmation();
         void loopTimeoutsConfirmation();
 
     public:

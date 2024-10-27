@@ -297,12 +297,15 @@ void Extra::loopInput() {
 
 void Extra::loopFoulsConfirmation() {
     foulsConfirmationTimer.loop();
-    bonusConfirmationTimer.loop();
     if (foulsConfirmationTimer.isRunning()) {
         updateFoulsDisplay((foulsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2) ? SHOW_FOULS : FOULS_OFF);
     } else if (fouls == 4 && foulsConfirmationTimer.isTriggered()) {
         bonusConfirmationTimer.reset();
     }
+}
+
+void Extra::loopBonusConfirmation() {
+    bonusConfirmationTimer.loop();
     if (bonusConfirmationTimer.isRunning()) {
         updateFoulsDisplay((bonusConfirmationTimer.elapsed() / BONUS_FLASH_DURATION_MS % 2) ? SHOW_BONUS : FOULS_OFF);
     } else if (bonusConfirmationTimer.isTriggered()) {
@@ -320,5 +323,6 @@ void Extra::loopTimeoutsConfirmation() {
 void Extra::loop() {
     loopInput();
     loopFoulsConfirmation();
+    loopBonusConfirmation();
     loopTimeoutsConfirmation();
 }
