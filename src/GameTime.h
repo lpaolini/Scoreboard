@@ -79,6 +79,8 @@ class GameTime {
         void loopSetTime();
         void loopSetStep();
         void loopCountdown();
+        void loopHold();
+        void loopStartFlash();
 
     public:
         GameTime(

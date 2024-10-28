@@ -500,12 +500,23 @@ void GameTime::loopSetStep() {
     showPeriod();
 }
 
-void GameTime::loop() {
+void GameTime::loopHold() {
     hold.loop();
+    if (hold.isTriggered()) {
+        timeStop = millis();
+    }
+}
+
+void GameTime::loopStartFlash() {
     startFlash.loop();
     if (startFlash.isTriggered()) {
         setBrightness(brightness);
     }
+}
+
+void GameTime::loop() {
+    loopHold();
+    loopStartFlash();
     switch (state->getMode()) {
         case GAME:
             loopGame();
