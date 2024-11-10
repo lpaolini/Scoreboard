@@ -69,23 +69,15 @@ void ElvasDisplay::check() {
 }
 
 void ElvasDisplay::alterTimeDisplay() {
-    if (state->isGameMode()) {
-        if (showPeriod) {
-            nextState.fields.time3 = DIGIT_OFF;
-            nextState.fields.time2 = DIGIT_OFF;
-            nextState.fields.time1 = state->getPeriod();
-            nextState.fields.time0 = DIGIT_OFF;
-        }
-        if (!showTime) {
-            nextState.fields.time3 = DIGIT_OFF;
-            nextState.fields.time2 = DIGIT_OFF;
-            nextState.fields.time1 = DIGIT_OFF;
-            nextState.fields.time0 = DIGIT_OFF;
-        }
-    } else {
+    if (!showTime) {
         nextState.fields.time3 = DIGIT_OFF;
         nextState.fields.time2 = DIGIT_OFF;
         nextState.fields.time1 = DIGIT_OFF;
+        nextState.fields.time0 = DIGIT_OFF;
+    } else if (showPeriod) {
+        nextState.fields.time3 = DIGIT_OFF;
+        nextState.fields.time2 = DIGIT_OFF;
+        nextState.fields.time1 = state->getPeriod();
         nextState.fields.time0 = DIGIT_OFF;
     }
 }
@@ -286,16 +278,24 @@ void ElvasDisplay::loopTimeDisplay() {
     unsigned long deltaTimeChanged = now - lastTimeChanged;
     unsigned long deltaHomeScoreChanged = now - lastHomeScoreChanged;
     unsigned long deltaGuestScoreChanged = now - lastGuestScoreChanged;
-    if (state->isGamePeriod()) {
-        if (time.fields.min == 0 && time.fields.sec > 0) {
-            // flash time when paused during the last ten seconds
-            showTime = deltaTimeChanged / 250 % 2 == 0;
-            showPeriod = false;
+    if (state->isGameMode()) {
+        if (state->isGamePeriod()) {
+            if (time.fields.min == 0 && time.fields.sec > 0) {
+                // flash time when paused during the last minute
+                showTime = deltaTimeChanged / 250 % 2 == 0;
+                showPeriod = false;
+            } else {
+                // show period once every 5 seconds, except during the last minute
+                showTime = true;
+                showPeriod = deltaTimeChanged / 1000 % 5 == 4;
+            }
         } else {
-            // show period once every 5 seconds
             showTime = true;
-            showPeriod = deltaTimeChanged / 1000 % 5 == 4;
+            showPeriod = false;
         }
+    } else {
+        showTime = false;
+        showPeriod = false;
     }
     showHomeScore = deltaHomeScoreChanged > SCORE_FLASH_DURATION_MS || deltaHomeScoreChanged / 250 % 2 == 0;
     showGuestScore = deltaGuestScoreChanged > SCORE_FLASH_DURATION_MS || deltaGuestScoreChanged / 250 % 2 == 0;
