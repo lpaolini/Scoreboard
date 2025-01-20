@@ -15,11 +15,10 @@ class ElvasDisplay : public WallDisplay {
         static const uint8_t DATA_LENGTH = 13;
         const uint8_t START_LENGTH = 9;
         const uint8_t SEQUENCE_LENGTH = 120;
-        const uint16_t BUZZER_DURATION_MS = 3000;
         const uint8_t DIGIT_OFF = 10;
-        const unsigned long END_OF_PERIOD_BUZZER_MS = 3000;
-        const unsigned long END_OF_TIMEOUT_BUZZER_MS = 1000;
-        const unsigned long SCORE_FLASH_DURATION_MS = 2000;
+        const uint16_t END_OF_PERIOD_BUZZER_MS = 3000;
+        const uint16_t END_OF_TIMEOUT_BUZZER_MS = 1000;
+        const uint16_t SCORE_FLASH_DURATION_MS = 2000;
 
         typedef union {
             struct Fields {
@@ -82,7 +81,7 @@ class ElvasDisplay : public WallDisplay {
 
         uint8_t outputPin;
         uint8_t ledPin;
-        Timer buzzerTimer = Timer(BUZZER_DURATION_MS, false);
+        Timer buzzerTimer = Timer(0, false);
 
         bool enabled;
         bool showFouls;
