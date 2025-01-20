@@ -419,6 +419,12 @@ void GameTime::startTimeout() {
     timeoutTime = TIMEOUT_TIME;
 }
 
+void GameTime::stopTimeout() {
+    if (state->getChrono() == TIMEOUT) {
+        stop();
+    }
+}
+
 void GameTime::publishTime() {
     if (onTimeUpdate != nullptr) {
         onTimeUpdate(current, tenths);

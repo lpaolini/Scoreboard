@@ -109,6 +109,7 @@ class GameTime {
         void decrease();
         void increase();
         void startTimeout();
+        void stopTimeout();
         void loop();
 };
 

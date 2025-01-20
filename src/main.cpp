@@ -290,6 +290,7 @@ void setupButtons() {
             }
         })
         .pressHold([] {
+            gameTime->stopTimeout();
             if (undoButton.isPressed()) {
                 homeExtra->decreaseTimeouts();
             } else {
@@ -313,6 +314,7 @@ void setupButtons() {
             }
         })
         .pressHold([] {
+            gameTime->stopTimeout();
             if (undoButton.isPressed()) {
                 guestExtra->decreaseTimeouts();
             } else {
