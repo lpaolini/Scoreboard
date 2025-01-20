@@ -229,9 +229,9 @@ void setupButtons() {
             if (homeScore->isEnabled()) {
                 beeper->click();
                 if (undoButton.isPressed()) {
-                    // adjustButtons.repeatDisable();
-                    // homeScore->decreaseDelta();
-                    homeScore->undo();
+                    adjustButtons.repeatDisable();
+                    homeScore->decreaseDelta();
+                    // homeScore->undo();
                 } else {
                     adjustButtons.repeatDisable(); 
                     homeScore->increaseDelta();
@@ -254,9 +254,9 @@ void setupButtons() {
             if (guestScore->isEnabled()) {
                 beeper->click();
                 if (undoButton.isPressed()) {
-                    // adjustButtons.repeatDisable();
-                    // guestScore->decreaseDelta();
-                    guestScore->undo();
+                    adjustButtons.repeatDisable();
+                    guestScore->decreaseDelta();
+                    // guestScore->undo();
                 } else {
                     adjustButtons.repeatDisable(); 
                     guestScore->increaseDelta();
