@@ -211,14 +211,14 @@ void ElvasDisplay::setGuestScore(uint8_t score) {
 }
 
 void ElvasDisplay::setHomeFouls(uint8_t fouls) {
-    if (fouls <= MAX_DISPLAY_FOULS) {
+    if (fouls <= MAX_DISPLAY_FOULS && fouls <= MAX_WALL_DISPLAY_FOULS) {
         currentState.fields.homeFouls1 = decimalDigit(fouls, 1);
         currentState.fields.homeFouls0 = decimalDigit(fouls, 0);
     }
 }
 
 void ElvasDisplay::setGuestFouls(uint8_t fouls) {
-    if (fouls <= MAX_DISPLAY_FOULS) {
+    if (fouls <= MAX_DISPLAY_FOULS && fouls <= MAX_WALL_DISPLAY_FOULS) {
         currentState.fields.guestFouls1 = decimalDigit(fouls, 1);
         currentState.fields.guestFouls0 = decimalDigit(fouls, 0);
     }

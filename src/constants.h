@@ -1,7 +1,7 @@
 #ifndef constants_h
 #define constants_h
 
-// #define ELVAS_DEBUG
+#define ELVAS_DEBUG
 // #define STATE_DEBUG
 #define SOUND
 
@@ -9,6 +9,7 @@
 
 #define MAX_SCORE 199
 #define MAX_FOULS 19
+#define MAX_WALL_DISPLAY_FOULS 5
 #define MAX_TIMEOUTS 3
 #define ELVAS_PIN 9
 #define LED_PIN 13
