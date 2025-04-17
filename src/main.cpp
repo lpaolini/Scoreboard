@@ -165,6 +165,10 @@ void onEndOfTimeout() {
     wallDisplay->endOfTimeout();
 }
 
+void onThreeMinutesAlert() {
+    wallDisplay->threeMinutesAlert();
+}
+
 // Reset
 
 void reset() {
@@ -180,7 +184,7 @@ void reset() {
 
 void setupControllers() {
     state->setup(onStateChange);
-    gameTime->setup(onTimeUpdate, onResetPeriod, onLastTwoMinutes, onEndOfPeriod, onEndOfTimeout);
+    gameTime->setup(onTimeUpdate, onResetPeriod, onLastTwoMinutes, onEndOfPeriod, onEndOfTimeout, onThreeMinutesAlert);
     homeScore->setup(onHomeScoreUpdate);
     homeExtra->setup(onHomeFoulsUpdate, onHomeTimeoutsUpdate);
     guestScore->setup(onGuestScoreUpdate);

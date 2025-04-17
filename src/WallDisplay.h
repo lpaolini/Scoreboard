@@ -20,6 +20,7 @@ class WallDisplay {
         virtual void setBuzzer(bool beeper);
         virtual void endOfPeriod();
         virtual void endOfTimeout();
+        virtual void threeMinutesAlert();
         virtual void loop();
 };
 

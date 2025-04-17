@@ -270,6 +270,10 @@ void ElvasDisplay::endOfTimeout() {
     buzzerOn(END_OF_TIMEOUT_BUZZER_MS);
 }
 
+void ElvasDisplay::threeMinutesAlert() {
+    buzzerOn(THREE_MINUTES_ALERT_BUZZER_MS);
+}
+
 void ElvasDisplay::loopBuzzer() {
     buzzerTimer.loop();
     if (buzzerTimer.isTriggered()) {

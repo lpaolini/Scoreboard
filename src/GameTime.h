@@ -31,6 +31,7 @@ class GameTime {
         void (*onLastTwoMinutes)() {};
         void (*onEndOfPeriod)() {};
         void (*onEndOfTimeout)() {};
+        void (*onThreeMinutesAlert)() {};
 
         uint8_t currentPreset = defaultPreset;
 
@@ -95,7 +96,8 @@ class GameTime {
             void (*onResetPeriod)(),
             void (*onLastTwoMinutes)(),
             void (*onEndOfPeriod)(),
-            void (*onEndOfTimeout)()
+            void (*onEndOfTimeout)(),
+            void (*onThreeMinutesAlert)()
         );
         void reset();
         void resetPeriod(bool advancePeriod = false);

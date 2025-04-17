@@ -112,6 +112,10 @@ class State {
             return mode == GAME && ((phase == REGULAR_TIME && period == 4) || phase == EXTRA_TIME);
         }
 
+        bool isPreparationOrInterval() {
+            return mode == GAME && (phase == PREPARATION || phase == INTERVAL);
+        }
+
         uint8_t getMaxTimeouts() {
             if (phase == REGULAR_TIME) {
                 if (period <= 2) {

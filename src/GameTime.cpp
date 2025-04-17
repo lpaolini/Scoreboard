@@ -19,13 +19,15 @@ void GameTime::setup(
     void (*onResetPeriod)(),
     void (*onLastTwoMinutes)(),
     void (*onEndOfPeriod)(),
-    void (*onEndOfTimeout)()
+    void (*onEndOfTimeout)(),
+    void (*onThreeMinutesAlert)()
 ) {
     this->onTimeUpdate = onTimeUpdate;
     this->onResetPeriod = onResetPeriod;
     this->onLastTwoMinutes = onLastTwoMinutes;
     this->onEndOfPeriod = onEndOfPeriod;
     this->onEndOfTimeout = onEndOfTimeout;
+    this->onThreeMinutesAlert = onThreeMinutesAlert;
     display->begin(address);
     setBrightness(brightness);
     enable(false);
@@ -103,12 +105,19 @@ void GameTime::showPeriodTime() {
 
     if (state->isGameMode()) {
         if (last.time != current.time) {
-            if (state->getChrono() == RUN && current.fields.min == 2 && current.fields.sec == 0 && current.time < last.time) {
-                if (state->isFourthPeriod()) {
-                    onLastTwoMinutes();
+            if (state->getChrono() == RUN) {
+                if (current.fields.min == 2 && current.fields.sec == 0) {
+                    if (state->isFourthPeriod()) {
+                        onLastTwoMinutes();
+                    }
+                    if (state->isFourthPeriodOrOvertime()) {
+                        beeper->confirm();
+                    }
                 }
-                if (state->isFourthPeriodOrOvertime()) {
-                    beeper->confirm();
+                if (current.fields.min == 3 && current.fields.sec == 0) {
+                    if (state->isPreparationOrInterval()) {
+                        onThreeMinutesAlert();
+                    }
                 }
             }
             last.time = current.time;

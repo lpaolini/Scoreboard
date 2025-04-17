@@ -18,6 +18,7 @@ class ElvasDisplay : public WallDisplay {
         const uint8_t DIGIT_OFF = 10;
         const uint16_t END_OF_PERIOD_BUZZER_MS = 3000;
         const uint16_t END_OF_TIMEOUT_BUZZER_MS = 1000;
+        const uint16_t THREE_MINUTES_ALERT_BUZZER_MS = 1500;
         const uint16_t SCORE_FLASH_DURATION_MS = 2000;
         const uint8_t MAX_DISPLAY_SCORE = 199;
         const uint8_t MAX_DISPLAY_FOULS = 5;
@@ -134,6 +135,7 @@ class ElvasDisplay : public WallDisplay {
         void setBuzzer(bool buzzer);
         void endOfPeriod();
         void endOfTimeout();
+        void threeMinutesAlert();
         void loop();
 };
 
