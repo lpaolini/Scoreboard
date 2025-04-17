@@ -32,7 +32,7 @@ class Extra {
         const unsigned long INPUT_TIMER_MS = 600;
         const unsigned long CONFIRMATION_FLASH_COUNT = 6;
         const unsigned long CONFIRMATION_FLASH_DURATION_MS = 75;
-        const unsigned long BONUS_FLASH_COUNT = 20;
+        const unsigned long BONUS_FLASH_COUNT = 30;
         const unsigned long BONUS_FLASH_DURATION_MS = 250;
         const uint8_t FOULS_POS[2][3] = {{ 5, 6, 7 }, { 0, 1, 2 }};
         const uint8_t TIMEOUTS_POS[2][3] = {{ 0, 1, 2 }, { 7, 6, 5 }};
