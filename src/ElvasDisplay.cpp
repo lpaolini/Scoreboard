@@ -189,7 +189,7 @@ void ElvasDisplay::setTimeSecTenth(Time time) {
 }
 
 void ElvasDisplay::setHomeScore(uint8_t score) {
-    if (score <= MAX_SCORE) {
+    if (score <= MAX_DISPLAY_SCORE) {
         currentState.fields.homeScore2 = decimalDigit(score, 2);
         currentState.fields.homeScore1 = decimalDigit(score, 1);
         currentState.fields.homeScore0 = decimalDigit(score, 0);
@@ -200,7 +200,7 @@ void ElvasDisplay::setHomeScore(uint8_t score) {
 }
 
 void ElvasDisplay::setGuestScore(uint8_t score) {
-    if (score <= MAX_SCORE) {
+    if (score <= MAX_DISPLAY_SCORE) {
         currentState.fields.guestScore2 = decimalDigit(score, 2);
         currentState.fields.guestScore1 = decimalDigit(score, 1);
         currentState.fields.guestScore0 = decimalDigit(score, 0);
@@ -211,27 +211,31 @@ void ElvasDisplay::setGuestScore(uint8_t score) {
 }
 
 void ElvasDisplay::setHomeFouls(uint8_t fouls) {
-    if (fouls <= MAX_FOULS) {
+    if (fouls <= MAX_DISPLAY_FOULS) {
         currentState.fields.homeFouls1 = decimalDigit(fouls, 1);
         currentState.fields.homeFouls0 = decimalDigit(fouls, 0);
     }
 }
 
 void ElvasDisplay::setGuestFouls(uint8_t fouls) {
-    if (fouls <= MAX_FOULS) {
+    if (fouls <= MAX_DISPLAY_FOULS) {
         currentState.fields.guestFouls1 = decimalDigit(fouls, 1);
         currentState.fields.guestFouls0 = decimalDigit(fouls, 0);
     }
 }
 
 void ElvasDisplay::setHomeTimeouts(uint8_t timeouts) {
-    currentState.fields.homeTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
-    currentState.fields.homeService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
+    if (timeouts <= MAX_DISPLAY_TIMEOUTS) {
+        currentState.fields.homeTimeouts = timeouts == 1 ? 1 : timeouts > 1 ? 3 : 0;
+        currentState.fields.homeService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
+    }
 }
 
 void ElvasDisplay::setGuestTimeouts(uint8_t timeouts) {
-    currentState.fields.guestTimeouts = timeouts == 1 ? 2 : timeouts > 1 ? 3 : 0;
-    currentState.fields.guestService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
+    if (timeouts <= MAX_DISPLAY_TIMEOUTS) {
+        currentState.fields.guestTimeouts = timeouts == 1 ? 2 : timeouts > 1 ? 3 : 0;
+        currentState.fields.guestService = timeouts == 3 ? 1 : 0; // use "service" indicator for 3rd timeout 
+    }
 }
 
 void ElvasDisplay::setBuzzer(bool buzzer) {
