@@ -18,7 +18,7 @@ class GameTime {
         const uint8_t START_FLASH_BRIGHTNESS = 15;
         const uint16_t START_FLASH_DURATION_MS = 125;
         const uint16_t STOP_FLASH_DURATION_MS = 250;
-        const uint16_t RUN_COLON_FLASH_DURATION_MS = 250;
+        const uint16_t RUN_COLON_FLASH_DURATION_MS = 100;
 
         Adafruit_7segment *display;
         uint8_t address;
