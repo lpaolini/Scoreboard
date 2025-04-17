@@ -41,7 +41,8 @@ class State {
 
         void reset() {
             mode = SET_STEP;
-            phase = REGULAR_TIME;
+            // phase = REGULAR_TIME;
+            phase = PREPARATION;
             chrono = STOP;
             period = 1;
             update();
