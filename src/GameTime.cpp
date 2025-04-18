@@ -67,8 +67,8 @@ void GameTime::stateChange() {
 }
 
 void GameTime::enable(bool enabled) {
-    display->setDisplayState(enabled);
     display->writeDisplay();
+    display->setDisplayState(enabled);
 }
 
 int GameTime::decimalDigit(int value, int digit) {
@@ -81,8 +81,6 @@ int GameTime::decimalDigit(int value, int digit) {
 }
 
 void GameTime::showPeriodTime() {
-    display->setDisplayState(true);
-
     if (periodTime <= 59900) {
         adjustedTime = periodTime + 99; // adjust for truncation to tenths of seconds
         current.fields.min = 0;
@@ -102,6 +100,8 @@ void GameTime::showPeriodTime() {
     } else {
         showPeriodTimeMinSec();
     }
+
+    display->setDisplayState(true);
 
     if (state->isGameMode()) {
         if (last.time != current.time) {
@@ -161,7 +161,6 @@ void GameTime::showLastTwoMinutesAlert() {
 }
 
 void GameTime::showTimeoutTime() {
-    display->setDisplayState(true);
     adjustedTime = timeoutTime + 999; // adjust for truncation to whole seconds
     uint8_t seconds = adjustedTime / 1000;
     display->writeDigitAscii(0, '-', false);
@@ -170,10 +169,10 @@ void GameTime::showTimeoutTime() {
     display->writeDigitAscii(4, '-', false);
     display->drawColon(false);
     display->writeDisplay();
+    display->setDisplayState(true);
 }
 
 void GameTime::showPeriod() {
-    display->setDisplayState(true);
     switch (state->getPhase()) {
         case TRAINING:
             display->writeDigitAscii(0, 'A', false);
@@ -211,6 +210,7 @@ void GameTime::showPeriod() {
 
     display->drawColon(false);
     display->writeDisplay();
+    display->setDisplayState(true);
 }
 
 void GameTime::start() {
@@ -453,11 +453,19 @@ bool GameTime::isEndOfGame() {
 }
 
 void GameTime::loopStop() {
-    bool show = (hold.isRunning() && !hold.isTriggered()) || (millis() - timeStop) / STOP_FLASH_DURATION_MS % 2;
-    if (show) {
+    if (hold.isRunning() && !hold.isTriggered()) {
         showPeriodTime();
     } else {
-        display->setDisplayState(false);
+        unsigned long cycle = (millis() - timeStop) / STOP_FLASH_DURATION_MS % 12;
+        if (cycle % 2) {
+            if (cycle >= 8) {
+                showPeriod();
+            } else {
+                showPeriodTime();
+            }
+        } else {
+            display->setDisplayState(false);
+        }
     }
 }
 
