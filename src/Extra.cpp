@@ -265,8 +265,11 @@ void Extra::loopFoulsConfirmation() {
     foulsConfirmationTimer.loop();
     if (foulsConfirmationTimer.isRunning()) {
         updateFoulsDisplay((foulsConfirmationTimer.elapsed() / CONFIRMATION_FLASH_DURATION_MS % 2) ? SHOW_FOULS : FOULS_OFF);
-    } else if (fouls == 4 && foulsConfirmationTimer.isTriggered()) {
-        bonusConfirmationTimer.reset();
+    } else if (foulsConfirmationTimer.isTriggered()) {
+        updateFoulsDisplay(SHOW_FOULS);
+        if (fouls == 4) {
+            bonusConfirmationTimer.reset();
+        }
     }
 }
 
